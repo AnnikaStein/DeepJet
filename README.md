@@ -54,6 +54,12 @@ the training is launched in the following way:
 python3 train_DeepFlavour.py /path/to/the/output/of/convert/dataCollection.djcdc <output dir of your choice>
 ```
 
+If you use the PyTorch version, please be aware this is a dev and unstable version. You will need to modify files depending on your will.
+The PyTorch training is launched in the following way:
+
+```
+python3 /path/to/DeepJet/pytorch/train_DeepFlavour.py /path/to/the/output/of/convert/dataCollection.djcdc <output dir of your choice>
+```
 
 Evaluation
 ====
@@ -65,6 +71,13 @@ predict.py <output dir of training>/KERAS_model.h5  <output dir of training>/tra
 ```
 
 This creates output trees with the prediction scores as well as truth information and some kinematic variables.
+
+Similarly to the training, the PyTorch prediction
+The PyTorch prediction is launched in the following way:
+
+```
+python3 /path/to/DeepJet/pytorch/predict_pytorch.py <DeepJet/DeepJetTransformer> <output dir of training>/checkpoint.pth  <output dir of training>/trainsamples.djcdc <dir with test sample stored as rootfiles>/filelist.txt <output directory>
+```
 
 Condor batch GPUs
 ====
