@@ -65,3 +65,18 @@ predict.py <output dir of training>/KERAS_model.h5  <output dir of training>/tra
 ```
 
 This creates output trees with the prediction scores as well as truth information and some kinematic variables.
+
+Condor batch GPUs
+====
+
+For training a NN using condor's GPUs we mostly use interactive sessions. You will need 3 files available in DeepJet-pytorch fork (sing.sh + sing.sub for condor and run_deepjetcore3.sh for our Singularity container).
+
+The commands for starting a GPU session are the next ones :
+```
+condor_submit -interactive /path/to/sing.sub
+source /path/to/run_deepjetcore3.sh
+export KRB5CCNAME=/tmp/cred1111
+kinit
+```
+
+You are now ready to train/predict any NN you want !
