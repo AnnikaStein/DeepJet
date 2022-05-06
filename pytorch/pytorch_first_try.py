@@ -24,7 +24,9 @@ import copy
 
 import imp
 
-def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, acc_loss):
+from attacks import *
+
+def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, attack, att_magnitude, restrict_impact, acc_loss):
     for b in range(nbatches):
         #should not happen unless files are broken (will give additional errors)
         #if dataloader.isEmpty():
@@ -37,7 +39,49 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         npf = torch.Tensor(features_list[2]).to(device)
         vtx = torch.Tensor(features_list[3]).to(device)
         #pxl = torch.Tensor(features_list[4]).to(device)
-        y = torch.Tensor(truth_list[0]).to(device)    
+        y = torch.Tensor(truth_list[0]).to(device)
+        # apply attack
+        #print('Attack type:',attack)
+        if attack == 'Noise':
+            #print('Do Noise')
+            glob = apply_noise(glob, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               excluded_indices=integers_glob,
+                               restrict_impact=restrict_impact,
+                               var_group='glob')
+            cpf = apply_noise(cpf, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               excluded_indices=integers_cpf,
+                               restrict_impact=restrict_impact,
+                               var_group='cpf')
+            npf = apply_noise(npf, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               excluded_indices=integers_npf,
+                               restrict_impact=restrict_impact,
+                               var_group='npf')
+            vtx = apply_noise(vtx, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               excluded_indices=integers_vtx,
+                               restrict_impact=restrict_impact,
+                               var_group='vtx')
+
+        elif attack == 'FGSM':
+            #print('Do FGSM')
+            glob, cpf, npf, vtx = fgsm_attack(sample=(glob,cpf,npf,vtx), 
+                                               epsilon=att_magnitude,
+                                               dev=device,
+                                               targets=y,
+                                               thismodel=model,
+                                               thiscriterion=loss_fn,
+                                               restrict_impact=restrict_impact)   
         # Compute prediction and loss
         pred = model(glob,cpf,npf,vtx)
         loss = loss_fn(pred, y.type_as(pred))
@@ -228,8 +272,12 @@ class training_base(object):
         self.val_data.setBatchSize(batchsize)
         
     def trainModel(self, nepochs, batchsize, batchsize_use_sum_of_squares = False, extend_truth_list_by=0,
-                   load_in_mem = False, max_files = -1, plot_batch_loss = False, **trainargs):
+                   load_in_mem = False, max_files = -1, plot_batch_loss = False, attack = None, att_magnitude = 0., restrict_impact = -1, **trainargs):
         
+        
+        print('Attack:',attack)
+        print('att_magnitude:',att_magnitude)
+        print('restrict_impact:',restrict_impact)
         self._initTraining(batchsize, batchsize_use_sum_of_squares)
         print('starting training')
         if load_in_mem:
@@ -286,7 +334,7 @@ class training_base(object):
                     self.model.train()
                     for param_group in self.optimizer.param_groups:
                         print('/n Learning rate = '+str(param_group['lr'])+' /n')
-                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, acc_loss=0)
+                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, attack, att_magnitude, restrict_impact, acc_loss=0)
                     self.scheduler.step()
                 
                     self.model.eval()

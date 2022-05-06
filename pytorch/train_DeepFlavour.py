@@ -17,7 +17,7 @@ lr_epochs = max(1, int(num_epochs * 0.3))
 lr_rate = 0.01 ** (1.0 / lr_epochs)
 mil = list(range(num_epochs - lr_epochs, num_epochs))
 
-model = DeepJet(num_classes = 4) #DeepJetTransformer(num_classes = 4)
+model = DeepJet(num_classes = 6) #DeepJetTransformer(num_classes = 4)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
@@ -30,5 +30,12 @@ train=training_base(model = model, criterion = criterion, optimizer = optimizer,
 
 train.train_data.maxFilesOpen=1
 
+attack = 'FGSM'
+att_magnitude = 0.01
+restrict_impact = 0.2
+
 model,history = train.trainModel(nepochs=num_epochs+lr_epochs, 
-                                 batchsize=4000)
+                                 batchsize=4000,
+                                 attack = attack,
+                                 att_magnitude = att_magnitude,
+                                 restrict_impact = restrict_impact)

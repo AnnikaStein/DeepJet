@@ -60,7 +60,10 @@ The PyTorch training is launched in the following way:
 ```
 python3 /path/to/DeepJet/pytorch/train_DeepFlavour.py /path/to/the/output/of/convert/dataCollection.djcdc <output dir of your choice>
 ```
-
+E.g.
+```
+python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/Data_Adv/dataCollection.djcdc /eos/user/a/anstein/Train_DF
+```
 Evaluation
 ====
 
