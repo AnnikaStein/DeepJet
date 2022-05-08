@@ -172,7 +172,7 @@ class training_base(object):
             if not (resumeSilently or recreate_silently):
                 var = input('output dir exists. To recover a training, please type "yes"\n')
                 if not var == 'yes':
-                    raise Exception('output directory must not exists yet')
+                    raise Exception('output directory must not exist yet')
                 isNewTraining=False
                 if recreate_silently:
                     isNewTraining=True     

@@ -45,43 +45,18 @@ class InputProcess(nn.Module):
         self.cpf_conv4 = InputConv(32,8)
         
         
-#        self.npf_bn = torch.nn.BatchNorm1d(8, eps = 0.001, momentum = 0.6)
-#        self.npf_conv1 = InputConv(8,32)
-        # gave an error: 
-        '''
-          Traceback (most recent call last):
-          File "pytorch/train_DeepFlavour.py", line 34, in <module>
-            batchsize=4000)
-          File "/afs/cern.ch/user/a/anstein/dj/DeepJet/pytorch/pytorch_first_try.py", line 289, in trainModel
-            train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, acc_loss=0)
-          File "/afs/cern.ch/user/a/anstein/dj/DeepJet/pytorch/pytorch_first_try.py", line 42, in train_loop
-            pred = model(glob,cpf,npf,vtx)
-          File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/module.py", line 727, in _call_impl
-            result = self.forward(*input, **kwargs)
-          File "/afs/cern.ch/user/a/anstein/dj/DeepJet/pytorch/pytorch_deepjet.py", line 156, in forward
-            cpf, npf, vtx = self.InputProcess(cpf, npf, vtx)
-          File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/module.py", line 727, in _call_impl
-            result = self.forward(*input, **kwargs)
-          File "/afs/cern.ch/user/a/anstein/dj/DeepJet/pytorch/pytorch_deepjet.py", line 74, in forward
-            npf = self.npf_bn(torch.transpose(npf, 1, 2))
-          File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/module.py", line 727, in _call_impl
-            result = self.forward(*input, **kwargs)
-          File "/usr/local/lib/python3.6/dist-packages/torch/nn/modules/batchnorm.py", line 136, in forward
-            self.weight, self.bias, bn_training, exponential_average_factor, self.eps)
-          File "/usr/local/lib/python3.6/dist-packages/torch/nn/functional.py", line 2058, in batch_norm
-            training, momentum, eps, torch.backends.cudnn.enabled
-          RuntimeError: running_mean should contain 6 elements not 8
-        '''
-        self.npf_bn = torch.nn.BatchNorm1d(6, eps = 0.001, momentum = 0.6)
-        self.npf_conv1 = InputConv(6,32)
+        self.npf_bn = torch.nn.BatchNorm1d(8, eps = 0.001, momentum = 0.6)
+        self.npf_conv1 = InputConv(8,32)
+#        self.npf_bn = torch.nn.BatchNorm1d(6, eps = 0.001, momentum = 0.6)
+#        self.npf_conv1 = InputConv(6,32)
         self.npf_conv2 = InputConv(32,16)
         self.npf_conv3 = InputConv(16,4)
 #        self.npf_conv4 = InputConv(128,128)
         
-#        self.vtx_bn = torch.nn.BatchNorm1d(14, eps = 0.001, momentum = 0.6)
-#        self.vtx_conv1 = InputConv(14,64)
-        self.vtx_bn = torch.nn.BatchNorm1d(12, eps = 0.001, momentum = 0.6)
-        self.vtx_conv1 = InputConv(12,64)
+        self.vtx_bn = torch.nn.BatchNorm1d(14, eps = 0.001, momentum = 0.6)
+        self.vtx_conv1 = InputConv(14,64)
+#        self.vtx_bn = torch.nn.BatchNorm1d(12, eps = 0.001, momentum = 0.6)
+#        self.vtx_conv1 = InputConv(12,64)
         self.vtx_conv2 = InputConv(64,32)
         self.vtx_conv3 = InputConv(32,32)
         self.vtx_conv4 = InputConv(32,8)

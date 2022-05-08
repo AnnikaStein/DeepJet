@@ -8,8 +8,8 @@ cands_per_variable = {
 vars_per_candidate = {
     'glob' : 15,
     'cpf' : 16,
-    'npf' : 6,#8
-    'vtx' : 12,#14
+    'npf' : 8,#6
+    'vtx' : 14,#12
     #'pxl' : ,
 }
 defaults_per_variable = {
@@ -21,8 +21,8 @@ defaults_per_variable = {
 }
 integer_variables_by_candidate = {
     'glob' : [2,3,4,5,8,13,14],
-    'cpf' : [12,13,14,15],
-    'npf' : [2],
-    'vtx' : [3],
+    'cpf' : [12,13,15],
+    'npf' : [4],
+    'vtx' : [5],
     #'pxl' : ,
 }

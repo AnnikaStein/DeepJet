@@ -30,10 +30,15 @@ train=training_base(model = model, criterion = criterion, optimizer = optimizer,
 
 train.train_data.maxFilesOpen=1
 
+
+attack = None
+att_magnitude = 0.
+restrict_impact = -1
+'''
 attack = 'FGSM'
 att_magnitude = 0.01
-restrict_impact = 0.2
-
+restrict_impact = -1
+'''
 model,history = train.trainModel(nepochs=num_epochs+lr_epochs, 
                                  batchsize=4000,
                                  attack = attack,

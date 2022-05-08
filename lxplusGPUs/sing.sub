@@ -8,5 +8,5 @@ when_to_transfer_output = ON_EXIT
 request_GPUs = 1
 request_CPUs = 1
 requirements = TARGET.CUDACapability =?= 7.0
-+JobFlavour = "tomorrow"
++JobFlavour = "testmatch"
 queue

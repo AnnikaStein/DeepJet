@@ -9,28 +9,47 @@ def apply_noise(sample, magn=1e-2,offset=[0], dev=torch.device("cpu"), restrict_
     seed = 0
     np.random.seed(seed)
 
-    n_Vars = cands_per_variable[var_group] * vars_per_candidate[var_group]
-
     with torch.no_grad():
-        noise = torch.Tensor(np.random.normal(offset,magn,(len(sample),n_Vars))).to(dev)
+        if var_group == 'glob':
+            noise = torch.Tensor(np.random.normal(offset,magn,(len(sample),vars_per_candidate[var_group]))).to(dev)
+        else:
+            noise = torch.Tensor(np.random.normal(offset,magn,(len(sample),cands_per_variable[var_group],vars_per_candidate[var_group]))).to(dev)
         xadv = sample + noise
 
-        # use full indices and check if in int.vars. or defaults
-        for i in range(n_Vars):
-            if i in integer_per_variable[var_group]:
-                xadv[:,i] = sample[:,i]
-            else: # non integer, but might have defaults that should be excluded from shift
-                defaults = sample[:,i].cpu() == defaults_per_variable[var_group][i]
-                if torch.sum(defaults) != 0:
-                    xadv[:,i][defaults] = sample[:,i][defaults]
+        if var_group == 'glob':
+            for i in range(vars_per_candidate['glob']):
+                if i in integer_per_variable[var_group]:
+                    xadv[:,i] = sample[:,i]
+                else: # non integer, but might have defaults that should be excluded from shift
+                    defaults = sample[:,i].cpu() == defaults_per_variable[var_group][i]
+                    if torch.sum(defaults) != 0:
+                        xadv[:,i][defaults] = sample[:,i][defaults]
 
-                if restrict_impact > 0:
-                    difference = xadv[:,i] - sample[:,i]
-                    allowed_perturbation = restrict_impact * torch.abs(sample[:,i])
-                    high_impact = torch.abs(difference) > allowed_perturbation
+                    if restrict_impact > 0:
+                        difference = xadv[:,i] - sample[:,i]
+                        allowed_perturbation = restrict_impact * torch.abs(sample[:,i])
+                        high_impact = torch.abs(difference) > allowed_perturbation
 
-                    if np.sum(high_impact)!=0:
-                        xadv[high_impact,i] = sample[high_impact,i] + allowed_perturbation[high_impact] * torch.sign(noise[high_impact,i])
+                        if torch.sum(high_impact)!=0:
+                            xadv[high_impact,i] = sample[high_impact,i] + allowed_perturbation[high_impact] * torch.sign(noise[high_impact,i])
+
+        else:
+            for j in range(cands_per_variable[var_group]):
+                for i in range(vars_per_candidate[var_group]):
+                    if i in integer_variables_by_candidate[var_group]:
+                        xadv[:,j,i] = sample[:,j,i]
+                    else:
+                        defaults = sample[:,j,i].cpu() == defaults_per_variable[var_group][i]
+                        if torch.sum(defaults) != 0:
+                            xadv[:,j,i][defaults] = sample[:,j,i][defaults]
+
+                        if restrict_impact > 0:
+                            difference = xadv[:,j,i] - sample[:,j,i]
+                            allowed_perturbation = restrict_impact * torch.abs(sample[:,j,i])
+                            high_impact = torch.abs(difference) > allowed_perturbation
+
+                            if torch.sum(high_impact)!=0:
+                                xadv[high_impact,j,i] = sample[high_impact,j,i] + allowed_perturbation[high_impact] * torch.sign(noise[high_impact,j,i])       
 
         return xadv
 
@@ -44,13 +63,6 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
     xadv_npf = npf.clone().detach()
     xadv_vtx = vtx.clone().detach()
 
-    '''
-    n_Vars_glob = cands_per_variable['glob'] * vars_per_candidate['glob']
-    n_Vars_cpf = cands_per_variable['cpf'] * vars_per_candidate['cpf']
-    n_Vars_npf = cands_per_variable['npf'] * vars_per_candidate['npf']
-    n_Vars_vtx = cands_per_variable['vtx'] * vars_per_candidate['vtx']
-    '''
-    
     xadv_glob.requires_grad = True
     xadv_cpf.requires_grad = True
     xadv_npf.requires_grad = True
@@ -74,13 +86,7 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
         xadv_npf += epsilon * dx_npf
         xadv_vtx += epsilon * dx_vtx
 
-        #print(xadv_glob.size())
-        #print(xadv_cpf.size())
-        #print(xadv_npf.size())
-        #print(xadv_vtx.size())
-        
         if reduced:
-        #if False:
             for i in range(vars_per_candidate['glob']):
                 if i in integer_variables_by_candidate['glob']:
                     xadv_glob[:,i] = glob[:,i]
@@ -104,8 +110,6 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
                     else:
                         defaults_cpf = cpf[:,j,i].cpu() == defaults_per_variable['cpf'][i]
                         if torch.sum(defaults_cpf) != 0:
-                            #print(cpf[:,j,i][defaults_cpf].size())
-                            #print(xadv_cpf[:,j,i][defaults_cpf].size())
                             xadv_cpf[:,j,i][defaults_cpf] = cpf[:,j,i][defaults_cpf]
 
                         if restrict_impact > 0:
@@ -139,7 +143,6 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
                         xadv_vtx[:,j,i] = vtx[:,j,i]
                     else:
                         defaults_vtx = vtx[:,j,i].cpu() == defaults_per_variable['vtx'][i]
-                        #defaults_vtx = vtx[:,j,i].cpu() == 0
                         if torch.sum(defaults_vtx) != 0:
                             xadv_vtx[:,j,i][defaults_vtx] = vtx[:,j,i][defaults_vtx]
 

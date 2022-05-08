@@ -2,6 +2,7 @@ from DeepJetCore.TrainData import TrainData, fileTimeOut
 import numpy as np
 import uproot3 as u3
 import awkward as ak
+import sys
 
 GLOBAL_PREFIX = ""
 
@@ -1401,11 +1402,14 @@ class TrainData_DF(TrainData):
                              'Cpfcan_quality']
         self.n_cpf = 25
 
-        self.npf_branches = ['Npfcan_ptrel','Npfcan_deltaR','Npfcan_isGamma','Npfcan_HadFrac','Npfcan_drminsv','Npfcan_puppiw']
+        self.npf_branches = ['Npfcan_ptrel', 'Npfcan_etarel', 'Npfcan_phirel', 'Npfcan_deltaR',
+                             'Npfcan_isGamma', 'Npfcan_HadFrac', 'Npfcan_drminsv', 'Npfcan_puppiw']
         self.n_npf = 25
         
         self.vtx_branches = ['sv_pt','sv_deltaR',
                              'sv_mass',
+                             'sv_etarel',
+                             'sv_phirel',
                              'sv_ntracks',
                              'sv_chi2',
                              'sv_normchi2',
@@ -1421,6 +1425,9 @@ class TrainData_DF(TrainData):
         
         self.reduced_truth = ['isB','isBB','isLeptonicB','isC','isUDS','isG']
 
+        
+        print(len(self.npf_branches),len(self.vtx_branches))
+        
         
     def createWeighterObjects(self, allsourcefiles):
         # 
@@ -1523,6 +1530,9 @@ class TrainData_DF(TrainData):
                                          self.n_vtx,self.nsamples)
         '''
 
+        print(len(self.npf_branches),len(self.vtx_branches))
+        #sys.exit()
+        
         x_global = uproot_tree_to_numpy(filename,
                                         self.global_branches,1,self.nsamples,
                                         treename='deepntuplizer/tree', flat = True)
@@ -1541,6 +1551,7 @@ class TrainData_DF(TrainData):
 
         
         import uproot3 as uproot
+        #import uproot
         urfile = uproot.open(filename)["deepntuplizer/tree"]
         truth_arrays = urfile.arrays(self.truth_branches)
         truth = reduceTruth(truth_arrays)
