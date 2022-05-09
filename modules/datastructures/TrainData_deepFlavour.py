@@ -2,7 +2,7 @@ from DeepJetCore.TrainData import TrainData, fileTimeOut
 import numpy as np
 import uproot3 as u3
 import awkward as ak
-import sys
+#import sys
 
 GLOBAL_PREFIX = ""
 
@@ -1426,7 +1426,7 @@ class TrainData_DF(TrainData):
         self.reduced_truth = ['isB','isBB','isLeptonicB','isC','isUDS','isG']
 
         
-        print(len(self.npf_branches),len(self.vtx_branches))
+        #print(len(self.npf_branches),len(self.vtx_branches))
         
         
     def createWeighterObjects(self, allsourcefiles):
@@ -1530,7 +1530,7 @@ class TrainData_DF(TrainData):
                                          self.n_vtx,self.nsamples)
         '''
 
-        print(len(self.npf_branches),len(self.vtx_branches))
+        #print(len(self.npf_branches),len(self.vtx_branches))
         #sys.exit()
         
         x_global = uproot_tree_to_numpy(filename,

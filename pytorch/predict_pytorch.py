@@ -80,7 +80,7 @@ else:
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if args.model == 'DeepJet':
-    model = DeepJet(num_classes = 4)
+    model = DeepJet(num_classes = 6)
 if args.model == 'DeepJetTransformer':
     model = DeepJetTransformer(num_classes = 4)
     
@@ -109,18 +109,21 @@ for inputfile in inputdatafiles:
     use_inputdir = inputdir
     if inputfile[0] == "/":
         use_inputdir=""
+    else:
+        use_inputdir=use_inputdir+"/"
     outfilename = "pred_"+os.path.basename( inputfile )
     
     td = dc.dataclass()
 
     if inputfile[-5:] == 'djctd':
         if args.unbuffered:
-            td.readFromFile(use_inputdir+"/"+inputfile)
+            td.readFromFile(use_inputdir+inputfile)
         else:
-            td.readFromFileBuffered(use_inputdir+"/"+inputfile)
+            td.readFromFileBuffered(use_inputdir+inputfile)
     else:
         print('converting '+inputfile)
-        td.readFromSourceFile(use_inputdir+"/"+inputfile, dc.weighterobjects, istraining=False)
+        print(use_inputdir+inputfile)
+        td.readFromSourceFile(use_inputdir+inputfile, dc.weighterobjects, istraining=False)
 
     gen = TrainDataGenerator()
     if batchsize < 1:
@@ -136,9 +139,9 @@ for inputfile in inputdatafiles:
     
     predicted = test_loop(gen.feedNumpyData(), model, nbatches=gen.getNBatches(), pbar = pbar)
     
-    x = td.transferFeatureListToNumpy()
-    w = td.transferWeightListToNumpy()
-    y = td.transferTruthListToNumpy()
+    x = td.transferFeatureListToNumpy(args.pad_rowsplits)
+    w = td.transferWeightListToNumpy(args.pad_rowsplits)
+    y = td.transferTruthListToNumpy(args.pad_rowsplits)
 
     td.clear()
     gen.clear()
