@@ -1,0 +1,64 @@
+condor_submit -interactive dj/DeepJet/lxplusGPUs/sing_prepData.sub
+
+source /afs/cern.ch/user/a/anstein/dj/DeepJet/lxplusGPUs/run_deepjetcore3.sh
+export KRB5CCNAME=/tmp/cred1111
+kinit
+source /afs/cern.ch/work/a/ademoor/public/DeepJetCore/docker_env.sh
+cd dj/DeepJet/
+source env.sh
+
+
+
+# Prepare data collection
+
+convertFromSource.py -i /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt -o /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2 -c TrainData_DF
+
+
+
+convertFromSource.py -i one_sample.txt -o /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2 -c TrainData_DF
+
+
+
+# Training
+
+condor_submit -interactive dj/DeepJet/lxplusGPUs/sing.sub
+
+python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel
+
+python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel
+
+# Predict
+
+## Nominal
+### medium set
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/trainsamples.djcdc /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/predict
+
+### just one sample
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/predict
+
+## Adversarial
+### medium set
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/trainsamples.djcdc /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict
+
+### just one sample
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict
+
+# Predict with distorted inputs
+
+## Nominal
+### medium set
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/trainsamples.djcdc /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.25
+
+### just one sample
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
+
+## Adversarial
+### medium set
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/trainsamples.djcdc /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.25
+
+### just one sample
+python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
+
+
+# ROC / AUC
+python3 scripts/plot_roc.py

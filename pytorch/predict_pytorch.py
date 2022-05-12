@@ -11,14 +11,14 @@ parser.add_argument("-b", help="batch size, overrides the batch size from the tr
 parser.add_argument("--gpu",  help="select specific GPU", metavar="OPT", default="")
 parser.add_argument("--unbuffered", help="do not read input in memory buffered mode (for lower memory consumption on fast disks)", default=False, action="store_true")
 parser.add_argument("--pad_rowsplits", help="pad the row splits if the input is ragged", default=False, action="store_true")
-parser.add_argument("--attack", help="use adversarial attack (Noise|FGSM) or leave blank to use undisturbed features only", default="", action="store_true")
-parser.add_argument("--att_magnitude", help="distort input features with adversarial attack, using specified magnitude of attack", default="-1", action="store_true")
-parser.add_argument("--restrict_impact", help="limit attack impact to this fraction of the input value (percent-cap on distortion)", default="-1", action="store_true")
+parser.add_argument("-attack", help="use adversarial attack (Noise|FGSM) or leave blank to use undisturbed features only", default="")
+parser.add_argument("-att_magnitude", help="distort input features with adversarial attack, using specified magnitude of attack", default="-1")
+parser.add_argument("-restrict_impact", help="limit attack impact to this fraction of the input value (percent-cap on distortion)", default="-1")
 
 args = parser.parse_args()
 batchsize = int(args.b)
 attack = args.attack
-att_magnitude = float(args.FGSM_epsilon)
+att_magnitude = float(args.att_magnitude)
 restrict_impact = float(args.restrict_impact)
 
 import imp
@@ -35,7 +35,7 @@ from pytorch_deepjet import DeepJet
 from pytorch_deepjet_transformer import DeepJetTransformer
 from torch.optim import Adam, SGD
 from tqdm import tqdm
-
+from attacks import apply_noise, fgsm_attack
 inputdatafiles=[]
 inputdir=None
 
@@ -46,67 +46,67 @@ def cross_entropy_one_hot(input, target):
 def test_loop(dataloader, model, nbatches, pbar, attack = "", att_magnitude = -1., restrict_impact = -1., loss_fn = cross_entropy_one_hot):
     predictions = 0
     
-    with torch.no_grad():
-        for b in range(nbatches):
-            
-            features_list, truth_list = next(dataloader)
-            glob = torch.Tensor(features_list[0]).to(device)
-            cpf = torch.Tensor(features_list[1]).to(device)
-            npf = torch.Tensor(features_list[2]).to(device)
-            vtx = torch.Tensor(features_list[3]).to(device)
-            #pxl = torch.Tensor(features_list[4]).to(device)
-            y = torch.Tensor(truth_list[0]).to(device)    
-            
-            
-            
-            if attack == 'Noise':
-                #print('Do Noise')
-                glob = apply_noise(glob, 
-                                   magn=att_magnitude,
-                                   offset=[0],
-                                   dev=device,
-                                   restrict_impact=restrict_impact,
-                                   var_group='glob')
-                cpf = apply_noise(cpf, 
-                                   magn=att_magnitude,
-                                   offset=[0],
-                                   dev=device,
-                                   restrict_impact=restrict_impact,
-                                   var_group='cpf')
-                npf = apply_noise(npf, 
-                                   magn=att_magnitude,
-                                   offset=[0],
-                                   dev=device,
-                                   restrict_impact=restrict_impact,
-                                   var_group='npf')
-                vtx = apply_noise(vtx, 
-                                   magn=att_magnitude,
-                                   offset=[0],
-                                   dev=device,
-                                   restrict_impact=restrict_impact,
-                                   var_group='vtx')
+    #with torch.no_grad():
+    for b in range(nbatches):
 
-            elif attack == 'FGSM':
-                #print('Do FGSM')
-                glob, cpf, npf, vtx = fgsm_attack(sample=(glob,cpf,npf,vtx), 
-                                                   epsilon=att_magnitude,
-                                                   dev=device,
-                                                   targets=y,
-                                                   thismodel=model,
-                                                   thiscriterion=loss_fn,
-                                                   restrict_impact=restrict_impact)
-            
-            
-            
-            # Compute prediction
-            pred = nn.Softmax(dim=1)(model(glob,cpf,npf,vtx)).cpu().numpy()
-            if b == 0:
-                predictions = pred
-            else:
-                predictions = np.concatenate((predictions, pred), axis=0)
-            desc = 'Predicting probs : '
-            pbar.set_description(desc)
-            pbar.update(1)
+        features_list, truth_list = next(dataloader)
+        glob = torch.Tensor(features_list[0]).to(device)
+        cpf = torch.Tensor(features_list[1]).to(device)
+        npf = torch.Tensor(features_list[2]).to(device)
+        vtx = torch.Tensor(features_list[3]).to(device)
+        #pxl = torch.Tensor(features_list[4]).to(device)
+        y = torch.Tensor(truth_list[0]).to(device)    
+
+
+
+        if attack == 'Noise':
+            #print('Do Noise')
+            glob = apply_noise(glob, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='glob')
+            cpf = apply_noise(cpf, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='cpf')
+            npf = apply_noise(npf, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='npf')
+            vtx = apply_noise(vtx, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='vtx')
+
+        elif attack == 'FGSM':
+            #print('Do FGSM')
+            glob, cpf, npf, vtx = fgsm_attack(sample=(glob,cpf,npf,vtx), 
+                                               epsilon=att_magnitude,
+                                               dev=device,
+                                               targets=y,
+                                               thismodel=model,
+                                               thiscriterion=loss_fn,
+                                               restrict_impact=restrict_impact)
+
+
+
+        # Compute prediction
+        pred = nn.Softmax(dim=1)(model(glob,cpf,npf,vtx)).cpu().detach().numpy()
+        if b == 0:
+            predictions = pred
+        else:
+            predictions = np.concatenate((predictions, pred), axis=0)
+        desc = 'Predicting probs : '
+        pbar.set_description(desc)
+        pbar.update(1)
         
     return predictions
 

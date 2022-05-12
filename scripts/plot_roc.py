@@ -43,7 +43,7 @@ else:
 
 #some_path = '/eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel/predict/pred_ntuple_merged_342.root'
     
-dirz = '/eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict/'
+dirz = '/eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict_FGSM/'
 truthfile = open( dirz+'outfiles.txt','r')
 #truthfile = open( dirz+'one_prediction.txt','r')
 print("opened text file")
@@ -74,7 +74,7 @@ else:
     veto_udsg = (df['isUDSG'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
 
 
-f = ROOT.TFile("ROCS_DeepJet_adversarial_medium.root", "recreate")
+f = ROOT.TFile("ROCS_DeepJet_adversarial_FGSM_onefile.root", "recreate")
 
 x1, y1 = spit_out_roc(disc,b_jets,veto_c)
 x2, y2 = spit_out_roc(disc,b_jets,veto_udsg)
