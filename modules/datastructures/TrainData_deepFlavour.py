@@ -1810,7 +1810,7 @@ class TrainData_DeepCSV(TrainData):
                                    [self.global_branches,self.track_branches,self.eta_rel_branches,self.vtx_branches],
                                    [1,self.n_track,self.n_eta_rel,self.n_vtx],self.nsamples)
                 
-        import uproot
+        import uproot3 as uproot
         urfile = uproot.open(filename)["deepntuplizer/tree"]
         truth_arrays = urfile.arrays(self.truth_branches)
         truth = reduceTruth(truth_arrays)

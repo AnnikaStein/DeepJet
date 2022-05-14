@@ -18,6 +18,12 @@ convertFromSource.py -i /eos/cms/store/group/phys_btag/ParticleTransformer/merge
 convertFromSource.py -i one_sample.txt -o /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2 -c TrainData_DF
 
 
+## DeepCSV
+
+convertFromSource.py -i /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt -o /eos/user/a/anstein/DeepCSV/Data -c TrainData_DeepCSV
+
+convertFromSource.py -i one_sample.txt -o /eos/user/a/anstein/DeepCSV/Data -c TrainData_DeepCSV
+
 
 # Training
 
@@ -26,6 +32,9 @@ condor_submit -interactive dj/DeepJet/lxplusGPUs/sing.sub
 python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel
 
 python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel
+
+
+
 
 # Predict
 
@@ -42,6 +51,10 @@ python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/
 
 ### just one sample
 python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel/predict
+
+
+
+
 
 # Predict with distorted inputs
 
