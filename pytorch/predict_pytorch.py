@@ -198,8 +198,14 @@ for inputfile in inputdatafiles:
     td.clear()
     gen.clear()
     
+    
+    # In principle, here it should be possible to calc the discriminators and then store these together with the predictions
+    
+    
     if not type(predicted) == list: #circumvent that keras return only an array if there is just one list item
         predicted = [predicted]   
+        
+    # Optimal would be to include the discriminators here
     overwrite_outname = td.writeOutPrediction(predicted, x, y, w, args.outputDir + "/" + outfilename, use_inputdir+"/"+inputfile)
     if overwrite_outname is not None:
         outfilename = overwrite_outname
