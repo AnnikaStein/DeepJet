@@ -11,11 +11,23 @@ source env.sh
 
 # Prepare data collection
 
+Don't forget to make the parent dir, but not the actual directory
+
+Once the output directory exists (and you want to overwrite what's inside), rm -r that dir first
+
+## DeepJet (Run3 / most recent)
+
 convertFromSource.py -i /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt -o /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2 -c TrainData_DF
 
-
-
 convertFromSource.py -i one_sample.txt -o /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2 -c TrainData_DF
+
+
+## DeepJet (Run2, less features)
+
+
+convertFromSource.py -i /eos/cms/store/group/phys_btag/ParticleTransformer/merged/samples_medium.txt -o /eos/user/a/anstein/DeepJet_Run2/Data -c TrainData_DF_Run2
+
+convertFromSource.py -i one_sample.txt -o /eos/user/a/anstein/DeepJet_Run2/Data -c TrainData_DF_Run2
 
 
 ## DeepCSV
