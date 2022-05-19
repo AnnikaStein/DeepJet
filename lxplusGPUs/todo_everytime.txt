@@ -7,6 +7,11 @@ source /afs/cern.ch/work/a/ademoor/public/DeepJetCore/docker_env.sh
 cd dj/DeepJet/
 source env.sh
 
+Note: the new container comes without pytorch
+Note 2: installing to AFS works only if you have like 2GB available, use a prefix instead and add directory to (python)path
+pip3 install torch==1.10.2+cu111 -f https://download.pytorch.org/whl/torch_stable.html --prefix /afs/cern.ch/work/a/anstein --no-cache-dir
+export PYTHONPATH=/afs/cern.ch/work/a/anstein/lib/python3.6/site-packages:$PYTHONPATH
+export PATH=/afs/cern.ch/work/a/anstein/bin:$PATH
 
 
 # Prepare data collection
@@ -40,11 +45,22 @@ convertFromSource.py -i one_sample.txt -o /eos/user/a/anstein/DeepCSV/Data -c Tr
 # Training
 
 condor_submit -interactive dj/DeepJet/lxplusGPUs/sing.sub
+(See steps from above to setup container)
+
+Adjust variables in train_DeepFlavour(_adv) to use different generations of taggers, do adversarial training or not, and if adversarial, decide on which parameters to use
+
+
+# Run3 DeepJet
 
 python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF/adversarial_with_etarel_phirel
 
 python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet/Data/with_etarel_phirel_v2/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF/nominal_with_etarel_phirel
 
+# Run2 DeepJet
+
+python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01
+
+python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal
 
 
 
@@ -87,3 +103,11 @@ python3 pytorch/predict_pytorch.py DeepJet /eos/user/a/anstein/DeepJet/Train_DF/
 
 # ROC / AUC
 python3 scripts/plot_roc.py
+
+
+
+
+
+
+# forget about torchvision and torchaudio for now
+#pip3 install torch==1.10.2+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.2 -f https://download.pytorch.org/whl/torch_stable.html

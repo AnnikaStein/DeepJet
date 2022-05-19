@@ -3,6 +3,7 @@ import torch.nn as nn
 #from DeepJetCore.training.pytorch_first_try import training_base
 from pytorch_first_try import training_base
 from pytorch_deepjet import *
+from pytorch_deepjet_run2 import *
 from pytorch_deepjet_transformer import DeepJetTransformer
 #from pytorch_deepjet_transformer_v2 import DeepJetTransformerv2
 from pytorch_ranger import Ranger
@@ -11,13 +12,13 @@ def cross_entropy_one_hot(input, target):
     _, labels = target.max(dim=1)
     return nn.CrossEntropyLoss()(input, labels)
 
-num_epochs = 30
+num_epochs = 60 # AS [19.05.22]: more epochs for adversarial training (because we know that this converges only slowly due to saddle-point problem)
 
 lr_epochs = max(1, int(num_epochs * 0.3))
 lr_rate = 0.01 ** (1.0 / lr_epochs)
 mil = list(range(num_epochs - lr_epochs, num_epochs))
 
-model = DeepJet(num_classes = 6) #DeepJetTransformer(num_classes = 4)
+model = DeepJet_Run2(num_classes = 6) #DeepJet(num_classes = 6) #DeepJetTransformer(num_classes = 4)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 

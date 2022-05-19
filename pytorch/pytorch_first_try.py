@@ -88,7 +88,7 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         optimizer.step()
         
         # Add loss to accumulated loss
-        acc_loss += loss
+        acc_loss += loss.item() # AS [19.05.22]: only the value of the loss function, don't need whole computational graph
  
         # Update progress bar description
         avg_loss = acc_loss / (b + 1)
@@ -241,13 +241,14 @@ class training_base(object):
       #      del self.train_data
        #     del self.val_data
             
-    def saveModel(self,model, optimizer, epoch, scheduler, best_loss, is_best = False):
-        checkpoint = {'state_dict': model.state_dict(),'optimizer' :optimizer.state_dict(),'epoch': epoch,'scheduler': scheduler.state_dict(),'best_loss': best_loss}
+    def saveModel(self,model, optimizer, epoch, scheduler, best_loss, train_loss, val_loss, is_best = False):
+        checkpoint = {'state_dict': model.state_dict(),'optimizer' :optimizer.state_dict(),'epoch': epoch,'scheduler': scheduler.state_dict(),'best_loss': best_loss,'train_loss': train_loss,'val_loss': val_loss}
+        # AS [19.05.22]: want to save both losses (train/val) to plot curves later and compare between trainings (exclude overfitting!)
         if is_best:
             torch.save(checkpoint, self.outputDir+'checkpoint_best_loss.pth')
         else:
             torch.save(checkpoint, self.outputDir+'checkpoint.pth')
-            torch.save(checkpoint, self.outputDir+'checkpoint_epoch_'+str(epoch)+'.pth')
+        torch.save(checkpoint, self.outputDir+'checkpoint_epoch_'+str(epoch)+'.pth')
         
     def _initTraining(self, batchsize, use_sum_of_squares=False):
         
@@ -340,9 +341,9 @@ class training_base(object):
                     
                     if(val_loss < self.best_loss):
                         self.best_loss = val_loss
-                        self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, is_best = True)
+                        self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = True)
 
                     
-                    self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, is_best = False)
+                    self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = False)
                 
                 traingen.shuffleFilelist()
