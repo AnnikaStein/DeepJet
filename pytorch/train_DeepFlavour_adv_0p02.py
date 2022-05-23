@@ -37,7 +37,7 @@ att_magnitude = 0.
 restrict_impact = -1
 '''
 attack = 'FGSM'
-att_magnitude = 0.005
+att_magnitude = 0.02
 restrict_impact = -1
 
 model,history = train.trainModel(nepochs=num_epochs+lr_epochs, 

@@ -346,4 +346,5 @@ class training_base(object):
                     
                     self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = False)
                 
-                traingen.shuffleFilelist()
+                #traingen.shuffleFilelist()
+                traingen.shuffleFileList()

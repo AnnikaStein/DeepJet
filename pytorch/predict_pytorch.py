@@ -32,6 +32,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_deepjet import DeepJet
+from pytorch_deepjet_run2 import DeepJet_Run2
 from pytorch_deepjet_transformer import DeepJetTransformer
 from torch.optim import Adam, SGD
 from tqdm import tqdm
@@ -130,9 +131,14 @@ else:
             inputdatafiles.append(s.replace('\n', '').replace(" ",""))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# https://github.com/pytorch/captum/issues/564#issuecomment-748274352
+if torch.cuda.is_available():
+    torch.backends.cudnn.enabled=False
 
 if args.model == 'DeepJet':
     model = DeepJet(num_classes = 6)
+if args.model == 'DeepJet_Run2':
+    model = DeepJet_Run2(num_classes = 6)
 if args.model == 'DeepJetTransformer':
     model = DeepJetTransformer(num_classes = 4)
     

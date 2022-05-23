@@ -16,9 +16,12 @@ from root_numpy import fill_hist
 print("finish import")
 
 
-model_name = 'adversarial_with_etarel_phirel'
-prediction_setup = ''
-prediction_files = 'one_prediction'
+#model_name = 'adversarial_with_etarel_phirel'
+#model_name = 'nominal'
+model_name = 'adversarial_eps0p01'
+prediction_setup = '_FGSM'
+#prediction_files = 'one_prediction'
+prediction_files = 'outfiles'
 
 
 def spit_out_roc(disc,truth_array,selection_array):
@@ -50,7 +53,8 @@ else:
 
     
 
-dirz = f'/eos/user/a/anstein/DeepJet/Train_DF/{model_name}/predict{prediction_setup}/'
+#dirz = f'/eos/user/a/anstein/DeepJet/Train_DF/{model_name}/predict{prediction_setup}/'
+dirz = f'/eos/user/a/anstein/public/DeepJet/Train_DF_Run2/{model_name}/predict{prediction_setup}/'
 truthfile = open( dirz+prediction_files+'.txt','r')
 
 config_name = model_name + prediction_setup + '_' + prediction_files
@@ -87,8 +91,8 @@ else:
 
 x1, y1, auc1 = spit_out_roc(disc,b_jets,veto_c)
 x2, y2, auc2 = spit_out_roc(disc,b_jets,veto_udsg)
-np.save(dirz + f'BvL_{prediction_files}.npy',np.array([x1,y1,auc1]))
-np.save(dirz + f'BvC_{prediction_files}.npy',np.array([x2,y2,auc2]))
+np.save(dirz + f'BvL_{prediction_files}.npy',np.array([x1,y1,auc1],dtype=object))
+np.save(dirz + f'BvC_{prediction_files}.npy',np.array([x2,y2,auc2],dtype=object))
 
 
 #gr1 = TGraph( 100, x1, y1 )
