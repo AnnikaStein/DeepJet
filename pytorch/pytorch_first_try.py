@@ -40,6 +40,10 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         vtx = torch.Tensor(features_list[3]).to(device)
         #pxl = torch.Tensor(features_list[4]).to(device)
         y = torch.Tensor(truth_list[0]).to(device)
+        
+        glob[:,:] = torch.where(glob[:,:] == -999, 0, glob[:,:])
+        glob[:,:] = torch.where(glob[:,:] ==   -1, 0, glob[:,:])
+        
         # apply attack
         #print('Attack type:',attack)
         if attack == 'Noise':

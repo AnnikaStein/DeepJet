@@ -18,8 +18,8 @@ print("finish import")
 
 #model_name = 'adversarial_with_etarel_phirel'
 #model_name = 'nominal'
-model_name = 'adversarial_eps0p01'
-prediction_setup = '_FGSM'
+model_name = 'adversarial_eps0p005'
+prediction_setup = ''
 #prediction_files = 'one_prediction'
 prediction_files = 'outfiles'
 

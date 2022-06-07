@@ -58,6 +58,11 @@ python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet/Data/with_etare
 
 # Run2 DeepJet
 
+python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005_bsize50k
+
+
+python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005_bsize100k
+
 python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005
 
 python3 pytorch/train_DeepFlavour_adv_0p02.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p02
@@ -90,6 +95,9 @@ python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Trai
 
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/adversarial_eps0p01/predict
 
+python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/adversarial_eps0p005/predict
+
+
 
 
 # Predict with distorted inputs
@@ -114,9 +122,16 @@ python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Trai
 
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/adversarial_eps0p01/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
 
+
+python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/adversarial_eps0p005/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
+
+
 # ROC / AUC
 python3 scripts/plot_roc.py
 
+
+# Loss
+python3 scripts/plot_loss.py
 
 
 

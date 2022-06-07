@@ -41,7 +41,7 @@ att_magnitude = 0.005
 restrict_impact = -1
 
 model,history = train.trainModel(nepochs=num_epochs+lr_epochs, 
-                                 batchsize=4000,
+                                 batchsize=100000,
                                  attack = attack,
                                  att_magnitude = att_magnitude,
                                  restrict_impact = restrict_impact)

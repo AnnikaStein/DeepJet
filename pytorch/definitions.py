@@ -15,6 +15,13 @@ vars_per_candidate = {
     'vtx' : 12,
     #'pxl' : ,
 }
+defaults_per_variable_before_prepro = {
+    'glob' : [None,None,None,None,None,None,-999,-999,-999,-999,-999,-999,-999,None,None],
+    'cpf' : [0 for i in range(vars_per_candidate['cpf'])],
+    'npf' : [0 for i in range(vars_per_candidate['npf'])],
+    'vtx' : [0 for i in range(vars_per_candidate['vtx'])],
+    #'pxl' : ,
+}
 defaults_per_variable = {
     'glob' : [0 for i in range(vars_per_candidate['glob'])],
     'cpf' : [0 for i in range(vars_per_candidate['cpf'])],
