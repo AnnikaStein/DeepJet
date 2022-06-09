@@ -25,8 +25,11 @@ import copy
 import imp
 
 from attacks import *
+from definitions import epsilons_per_feature, vars_per_candidate
 
-def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, attack, att_magnitude, restrict_impact, acc_loss):
+glob_vars = vars_per_candidate['glob']
+
+def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, attack, att_magnitude, restrict_impact, epsilon_factors, acc_loss):
     for b in range(nbatches):
         #should not happen unless files are broken (will give additional errors)
         #if dataloader.isEmpty():
@@ -41,8 +44,8 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         #pxl = torch.Tensor(features_list[4]).to(device)
         y = torch.Tensor(truth_list[0]).to(device)
         
-        glob[:,:] = torch.where(glob[:,:] == -999, 0, glob[:,:])
-        glob[:,:] = torch.where(glob[:,:] ==   -1, 0, glob[:,:])
+        glob[:,:] = torch.where(glob[:,:] == -999., torch.zeros(len(glob),glob_vars).to(device), glob[:,:])
+        glob[:,:] = torch.where(glob[:,:] ==   -1., torch.zeros(len(glob),glob_vars).to(device), glob[:,:])
         
         # apply attack
         #print('Attack type:',attack)
@@ -81,7 +84,8 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
                                                targets=y,
                                                thismodel=model,
                                                thiscriterion=loss_fn,
-                                               restrict_impact=restrict_impact)   
+                                               restrict_impact=restrict_impact,
+                                               epsilon_factors=epsilon_factors)   
         # Compute prediction and loss
         pred = model(glob,cpf,npf,vtx)
         loss = loss_fn(pred, y.type_as(pred))
@@ -311,6 +315,13 @@ class training_base(object):
             self.model.to(self.device)
             #self.optimizer.to(self.device)
             
+            epsilon_factors = {
+                'glob' : torch.Tensor(np.load(epsilons_per_feature['glob']).transpose()).to(self.device),
+                'cpf' : torch.Tensor(np.load(epsilons_per_feature['cpf']).transpose()).to(self.device),
+                'npf' : torch.Tensor(np.load(epsilons_per_feature['npf']).transpose()).to(self.device),
+                'vtx' : torch.Tensor(np.load(epsilons_per_feature['vtx']).transpose()).to(self.device),
+            }
+            
             while(self.trainedepoches < nepochs):
            
                 #this can change from epoch to epoch
@@ -335,7 +346,7 @@ class training_base(object):
                     self.model.train()
                     for param_group in self.optimizer.param_groups:
                         print('/n Learning rate = '+str(param_group['lr'])+' /n')
-                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, attack, att_magnitude, restrict_impact, acc_loss=0)
+                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, attack, att_magnitude, restrict_impact, epsilon_factors, acc_loss=0)
                     self.scheduler.step()
                 
                     self.model.eval()

@@ -65,6 +65,8 @@ python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/d
 
 python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p005
 
+python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/reduced_adversarial_eps0p005
+
 python3 pytorch/train_DeepFlavour_adv_0p02.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p02
 
 python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01

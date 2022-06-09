@@ -53,7 +53,7 @@ def apply_noise(sample, magn=1e-2,offset=[0], dev=torch.device("cpu"), restrict_
 
         return xadv
 
-def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriterion=None,reduced=True, dev=torch.device("cpu"), restrict_impact=-1):
+def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriterion=None,reduced=True, dev=torch.device("cpu"), restrict_impact=-1, epsilon_factors=None):
     if epsilon == 0:
         return sample
 
@@ -81,10 +81,10 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
         dx_npf = torch.sign(xadv_npf.grad.detach())
         dx_vtx = torch.sign(xadv_vtx.grad.detach())
 
-        xadv_glob += epsilon * dx_glob
-        xadv_cpf += epsilon * dx_cpf
-        xadv_npf += epsilon * dx_npf
-        xadv_vtx += epsilon * dx_vtx
+        xadv_glob += epsilon * epsilon_factors['glob'] * dx_glob
+        xadv_cpf += epsilon * epsilon_factors['cpf'] * dx_cpf
+        xadv_npf += epsilon * epsilon_factors['npf'] * dx_npf
+        xadv_vtx += epsilon * epsilon_factors['vtx'] * dx_vtx
 
         if reduced:
             for i in range(vars_per_candidate['glob']):
