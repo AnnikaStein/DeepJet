@@ -1,6 +1,7 @@
 from DeepJetCore.TrainData import TrainData, fileTimeOut
 import numpy as np
 import uproot3 as u3
+import uproot as u
 import awkward as ak
 #import sys
 
@@ -1713,16 +1714,24 @@ class TrainData_DF_Run2(TrainData):
         
         counter=0
         import ROOT
-        from root_numpy import tree2array, root2array
+        # from root_numpy import tree2array, root2array
         if self.remove:
             for fname in allsourcefiles:
                 fileTimeOut(fname, 120)
-                nparray = root2array(
-                    fname,
-                    treename = "deepntuplizer/tree",
-                    stop = None,
-                    branches = branches
-                )
+                # NEW [11.09.22 - because root_numpy is not part of container anymore] -->
+                events = u.open(fname)["deepntuplizer/tree"]
+                nparray = events.arrays(branches, library = 'np')
+                keys = list(nparray.keys())
+                for k in range(len(branches)):
+                    nparray[branches[k]] = nparray.pop(keys[k])
+                nparray = pd.Series(nparray)
+                # nparray = root2array(
+                #     fname,
+                #     treename = "deepntuplizer/tree",
+                #     stop = None,
+                #     branches = branches
+                # )
+                # < -- end NEW [11.09.22]
                 weighter.addDistributions(nparray)
                 #del nparray
                 counter=counter+1
@@ -1766,7 +1775,7 @@ class TrainData_DF_Run2(TrainData):
         print('reading '+filename)
         
         import ROOT
-        from root_numpy import tree2array, root2array
+        # from root_numpy import tree2array, root2array
         fileTimeOut(filename,120) #give eos a minute to recover
         rfile = ROOT.TFile(filename)
         tree = rfile.Get("deepntuplizer/tree")
@@ -1813,12 +1822,16 @@ class TrainData_DF_Run2(TrainData):
             b.extend(self.truth_branches)
             b.extend(self.undefTruth)
             fileTimeOut(filename, 120)
-            for_remove = root2array(
-                filename,
-                treename = "deepntuplizer/tree",
-                stop = None,
-                branches = b
-            )
+            # NEW [11.09.22 - because root_numpy is not part of container anymore] -->
+            events = u.open(filename)["deepntuplizer/tree"]
+            for_remove = events.arrays(b, library = 'pd')
+            # for_remove = root2array(
+            #     filename,
+            #     treename = "deepntuplizer/tree",
+            #     stop = None,
+            #     branches = b
+            # )
+            # < -- end NEW [11.09.22]
             notremoves=weighterobjects['weigther'].createNotRemoveIndices(for_remove)
             undef=for_remove['isUndefined']
             notremoves-=undef

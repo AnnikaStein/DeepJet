@@ -11,15 +11,17 @@ import pandas as pd
 import numpy as np
 import root_numpy
 import ROOT
-from ROOT import TCanvas, TGraph, TGraphAsymmErrors, TH2F, TH1F
+#from ROOT import TCanvas, TGraph, TGraphAsymmErrors, TH2F, TH1F
 from root_numpy import fill_hist
 print("finish import")
 
 
 #model_name = 'adversarial_with_etarel_phirel'
 #model_name = 'nominal'
-model_name = 'adversarial_eps0p005'
-prediction_setup = ''
+#model_name = 'adversarial_eps0p005'
+#model_name = 'reduced_adversarial_eps0p005'
+model_name = 'adversarial_eps0p01_bsize10k'
+prediction_setup = '_FGSM'
 #prediction_files = 'one_prediction'
 prediction_files = 'outfiles'
 
@@ -75,13 +77,28 @@ print("converted to df")
 
 if isDeepJet:
     b_jets = df['isB']+df['isBB']+df['isLeptB']
-    disc = df['prob_isB']+df['prob_isBB']+df['prob_isLeptB']
+    c_jets = df['isC']
+    b_out = df['prob_isB']+df['prob_isBB']+df['prob_isLeptB']
+    c_out = df['prob_isC']
+    light_out = df['prob_isUDS']+df['prob_isG']
+    bvsl = np.where((b_out + light_out)!=0,
+                    (b_out)/(b_out + light_out),
+                    -1)
+    cvsb = np.where((b_out + c_out)!=0,
+                    (c_out)/(b_out + c_out),
+                    -1)
+    cvsl = np.where((light_out + c_out)!=0,
+                    (c_out)/(light_out + c_out),
+                    -1)
     summed_truth = df['isB']+df['isBB']+df['isLeptB']+df['isC']+df['isUDS']+df['isG']
+    
+    veto_b = (df['isB'] != 1) & (df['isBB'] != 1) & (df['isLeptB'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
     veto_c = (df['isC'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
     veto_udsg = (df['isUDS'] != 1) & (df['isG'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
+    
 else:
     b_jets = df['isB']+df['isBB']
-    disc = df['prob_isB']+df['prob_isBB']
+    b_disc = df['prob_isB']+df['prob_isBB']
     summed_truth = df['isB']+df['isBB']+df['isC']+df['isUDSG']
     veto_c = (df['isC'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
     veto_udsg = (df['isUDSG'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
@@ -89,10 +106,12 @@ else:
 
 #f = ROOT.TFile("ROCS_DeepJet_adversarial_FGSM_onefile.root", "recreate")
 
-x1, y1, auc1 = spit_out_roc(disc,b_jets,veto_c)
-x2, y2, auc2 = spit_out_roc(disc,b_jets,veto_udsg)
+x1, y1, auc1 = spit_out_roc(bvsl,b_jets,veto_c)
+x2, y2, auc2 = spit_out_roc(cvsb,c_jets,veto_udsg)
+x3, y3, auc3 = spit_out_roc(cvsl,c_jets,veto_b)
 np.save(dirz + f'BvL_{prediction_files}.npy',np.array([x1,y1,auc1],dtype=object))
-np.save(dirz + f'BvC_{prediction_files}.npy',np.array([x2,y2,auc2],dtype=object))
+np.save(dirz + f'CvB_{prediction_files}.npy',np.array([x2,y2,auc2],dtype=object))
+np.save(dirz + f'CvL_{prediction_files}.npy',np.array([x3,y3,auc3],dtype=object))
 
 
 #gr1 = TGraph( 100, x1, y1 )

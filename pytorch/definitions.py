@@ -38,7 +38,7 @@ defaults_per_variable = {
 }
 integer_variables_by_candidate = {
     'glob' : [2,3,4,5,8,13,14],
-    'cpf' : [12,13,15],
+    'cpf' : [12,13,14,15], # adding 14 because chi2 is an approximante integer
 #    'npf' : [4],
     'npf' : [2],
 #    'vtx' : [5],

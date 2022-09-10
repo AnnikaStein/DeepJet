@@ -40,11 +40,15 @@ from attacks import apply_noise, fgsm_attack
 inputdatafiles=[]
 inputdir=None
 
+from definitions import epsilons_per_feature, vars_per_candidate
+
+glob_vars = vars_per_candidate['glob']
+
 def cross_entropy_one_hot(input, target):
     _, labels = target.max(dim=1)
     return nn.CrossEntropyLoss()(input, labels)
 
-def test_loop(dataloader, model, nbatches, pbar, attack = "", att_magnitude = -1., restrict_impact = -1., loss_fn = cross_entropy_one_hot):
+def test_loop(dataloader, model, nbatches, pbar, attack = "", att_magnitude = -1., restrict_impact = -1., loss_fn = cross_entropy_one_hot, epsilon_factors=None):
     predictions = 0
     
     #with torch.no_grad():
@@ -58,7 +62,8 @@ def test_loop(dataloader, model, nbatches, pbar, attack = "", att_magnitude = -1
         #pxl = torch.Tensor(features_list[4]).to(device)
         y = torch.Tensor(truth_list[0]).to(device)    
 
-
+        glob[:,:] = torch.where(glob[:,:] == -999., torch.zeros(len(glob),glob_vars).to(device), glob[:,:])
+        glob[:,:] = torch.where(glob[:,:] ==   -1., torch.zeros(len(glob),glob_vars).to(device), glob[:,:])
 
         if attack == 'Noise':
             #print('Do Noise')
@@ -95,7 +100,8 @@ def test_loop(dataloader, model, nbatches, pbar, attack = "", att_magnitude = -1
                                                targets=y,
                                                thismodel=model,
                                                thiscriterion=loss_fn,
-                                               restrict_impact=restrict_impact)
+                                               restrict_impact=restrict_impact,
+                                               epsilon_factors=epsilon_factors)
 
 
 
@@ -194,8 +200,15 @@ for inputfile in inputdatafiles:
 
     with tqdm(total = gen.getNBatches()) as pbar:
         pbar.set_description('Predicting : ')
+        
+    epsilon_factors = {
+                'glob' : torch.Tensor(np.load(epsilons_per_feature['glob']).transpose()).to(device),
+                'cpf' : torch.Tensor(np.load(epsilons_per_feature['cpf']).transpose()).to(device),
+                'npf' : torch.Tensor(np.load(epsilons_per_feature['npf']).transpose()).to(device),
+                'vtx' : torch.Tensor(np.load(epsilons_per_feature['vtx']).transpose()).to(device),
+            }
     
-    predicted = test_loop(gen.feedNumpyData(), model, nbatches=gen.getNBatches(), pbar = pbar, attack = attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact)
+    predicted = test_loop(gen.feedNumpyData(), model, nbatches=gen.getNBatches(), pbar = pbar, attack = attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact, epsilon_factors=epsilon_factors)
     
     x = td.transferFeatureListToNumpy(args.pad_rowsplits)
     w = td.transferWeightListToNumpy(args.pad_rowsplits)
