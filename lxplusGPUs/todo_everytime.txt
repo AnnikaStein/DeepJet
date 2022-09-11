@@ -77,6 +77,10 @@ python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/d
 
 python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize10k
 
+python3 pytorch/train_DeepFlavour_adv.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01_bsize4k
+
+python3 pytorch/train_DeepFlavour.py /eos/user/a/anstein/DeepJet_Run2/Data/dataCollection.djcdc /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize4k
+
 # Predict
 
 ## Nominal
@@ -160,13 +164,22 @@ python3 scripts/plot_loss.py
 ### nominal samples
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize10k/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize10k/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal_bsize10k/predict
 
+## nominal training [old training]
+### nominal samples
+python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal/predict_NEW
+
 ## adversarial training
 ### nominal samples
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01_bsize10k/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/adversarial_eps0p01_bsize10k/predict
 
+
 ## nominal training
 ### adversarial samples
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize10k/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize10k/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal_bsize10k/predict_FGSM -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
+
+## nominal training [old training]
+### adversarial samples
+python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal/predict_FGSM_NEW -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
 
 ## adversarial training
 ### adversarial samples

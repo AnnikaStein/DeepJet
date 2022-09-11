@@ -1862,10 +1862,12 @@ class TrainData_DF_Run2(TrainData):
     def writeOutPrediction(self, predicted, features, truth, weights, outfilename, inputfile):
         # predicted will be a list
         
-        from root_numpy import array2root
+        #from root_numpy import array2root
         out = np.core.records.fromarrays(np.vstack( (predicted[0].transpose(),truth[0].transpose(), features[0][:,0:2].transpose() ) ),
                                          names='prob_isB, prob_isBB,prob_isLeptB, prob_isC,prob_isUDS,prob_isG,isB, isBB, isLeptB, isC,isUDS,isG,jet_pt, jet_eta')
-        array2root(out, outfilename, 'tree')
+        #array2root(out, outfilename, 'tree')
+        print('saving to', outfilename)
+        np.save(outfilename.strip('.root')+'.npy', out)
 
         
 

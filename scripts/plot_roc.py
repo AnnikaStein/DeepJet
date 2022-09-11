@@ -9,10 +9,11 @@ from itertools import chain
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import root_numpy
+#import root_numpy
 import ROOT
 #from ROOT import TCanvas, TGraph, TGraphAsymmErrors, TH2F, TH1F
-from root_numpy import fill_hist
+#from root_numpy import fill_hist
+import uproot as u
 print("finish import")
 
 
@@ -20,8 +21,9 @@ print("finish import")
 #model_name = 'nominal'
 #model_name = 'adversarial_eps0p005'
 #model_name = 'reduced_adversarial_eps0p005'
-model_name = 'adversarial_eps0p01_bsize10k'
-prediction_setup = '_FGSM'
+#model_name = 'nominal_bsize10k'
+model_name = 'adversarial_eps0p01_bsize4k'
+prediction_setup = ''
 #prediction_files = 'one_prediction'
 prediction_files = 'outfiles'
 
@@ -62,17 +64,32 @@ truthfile = open( dirz+prediction_files+'.txt','r')
 config_name = model_name + prediction_setup + '_' + prediction_files
 
 print("opened text file")
-rfile1 = ROOT.TChain("tree")
+#rfile1 = ROOT.TChain("tree")
 count = 0
-
-for line in truthfile:
+import numpy.lib.recfunctions as rf
+for i,line in enumerate(truthfile):
     count += 1
     if len(line) < 1: continue
     file1name=str(dirz+line.split('\n')[0])
-    rfile1.Add(file1name)
+    # ToDo
+    #events = u.open(file1name)["tree"]
+    #nparray = events.arrays(listbranch, library = 'np') if i==0 else np.concatenate((nparray,events.arrays(listbranch, library = 'np')))
+    events = rf.structured_to_unstructured(np.array(np.load(file1name.strip('.root')+'.npy')))
+    
+    #events = np.core.records.fromfile(file1name.strip('.root')+'.npy', dtype=float)
+    nparray = events if i == 0 else np.concatenate((nparray, events))
+    #rfile1.Add(file1name)
 
 print("added files")
-df = root_numpy.tree2array(rfile1, branches = listbranch)
+#df = root_numpy.tree2array(rfile1, branches = listbranch)
+#keys = list(nparray.keys())
+#print(nparray[0][0])
+print(type(nparray))
+print(len(nparray))
+print(type(nparray[0]))
+#for k in range(len(listbranch)):
+#    nparray[listbranch[k]] = nparray[:,k]
+df = np.core.records.fromarrays([nparray[:,k] for k in range(len(listbranch))],names=listbranch)
 print("converted to df")
 
 if isDeepJet:
@@ -109,9 +126,9 @@ else:
 x1, y1, auc1 = spit_out_roc(bvsl,b_jets,veto_c)
 x2, y2, auc2 = spit_out_roc(cvsb,c_jets,veto_udsg)
 x3, y3, auc3 = spit_out_roc(cvsl,c_jets,veto_b)
-np.save(dirz + f'BvL_{prediction_files}.npy',np.array([x1,y1,auc1],dtype=object))
-np.save(dirz + f'CvB_{prediction_files}.npy',np.array([x2,y2,auc2],dtype=object))
-np.save(dirz + f'CvL_{prediction_files}.npy',np.array([x3,y3,auc3],dtype=object))
+np.save(dirz + f'BvL_{prediction_files}_NEW.npy',np.array([x1,y1,auc1],dtype=object))
+np.save(dirz + f'CvB_{prediction_files}_NEW.npy',np.array([x2,y2,auc2],dtype=object))
+np.save(dirz + f'CvL_{prediction_files}_NEW.npy',np.array([x3,y3,auc3],dtype=object))
 
 
 #gr1 = TGraph( 100, x1, y1 )
