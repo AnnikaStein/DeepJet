@@ -168,6 +168,10 @@ python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Trai
 ### nominal samples
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal/predict_NEW
 
+## nominal training [new training]
+### nominal samples
+python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize4k/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize4k/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal_bsize4k/predict
+
 ## adversarial training
 ### nominal samples
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/adversarial_eps0p01_bsize10k/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/adversarial_eps0p01_bsize10k/predict
@@ -180,6 +184,10 @@ python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Trai
 ## nominal training [old training]
 ### adversarial samples
 python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal/predict_FGSM_NEW -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
+
+## nominal training [new training]
+### adversarial samples
+python3 pytorch/predict_pytorch.py DeepJet_Run2 /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize4k/checkpoint_best_loss.pth  /eos/user/a/anstein/DeepJet/Train_DF_Run2/nominal_bsize4k/trainsamples.djcdc one_sample.txt /eos/user/a/anstein/public/DeepJet/Train_DF_Run2/nominal_bsize4k/predict_FGSM_NEW -attack FGSM -att_magnitude 0.01 -restrict_impact 0.2
 
 ## adversarial training
 ### adversarial samples
