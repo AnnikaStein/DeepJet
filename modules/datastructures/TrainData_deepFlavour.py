@@ -5,7 +5,10 @@ import uproot3 as u3
 import uproot as u
 import awkward as ak
 import pandas as pd
+<<<<<<< HEAD:modules/datastructures/TrainData_deepFlavour_BACKUP.py
 #import sys
+=======
+>>>>>>> a1875e346d59730c842ba1ad63b91f42f5b8afa4:modules/datastructures/TrainData_deepFlavour.py
 
 GLOBAL_PREFIX = ""
 
@@ -145,6 +148,356 @@ def map_prefix(elements):
     else:
         print("Error, you gave >>{}<< which is unknown".format(elements))
         raise NotImplementedError
+
+class TrainData_ParT(TrainData):
+    def __init__(self):
+
+        TrainData.__init__(self)        
+        
+        self.description = "ParT inputs"
+        
+        self.truth_branches = ['isB','isBB','isGBB','isLeptonicB','isLeptonicB_C','isC','isGCC','isCC','isUD','isS','isG']
+        self.undefTruth=['isUndefined', 'isPU']
+        self.weightbranchX='jet_pt'
+        self.weightbranchY='jet_eta'
+        self.remove = True
+        self.referenceclass= 'isB'  #'flatten'  #Choose 'flatten' for flat or one of the truth branch for ref
+        self.red_classes = ['cat_B','cat_C','cat_UDS','cat_G'] #reduced classes (flat only)
+        self.truth_red_fusion = [('isB','isBB','isGBB','isLeptonicB','isLeptonicB_C'),('isC','isGCC','isCC'),('isUD','isS'),('isG')] #Indicates how you are making the fusion of your truth branches to the reduced classes for the flat reweighting
+        self.class_weights = np.array([1.00,1.00,2.5,5.0], dtype=float)  #Ratio between our reduced classes (flat only)
+        self.weight_binX = np.array([15, 20, 26, 35, 46, 61, 80, 106, 141, 186, 247, 326, 432, 571, 756, 1000],dtype=float) #Flat reweighting
+        #self.weight_binX = np.arange(100,2001,100)
+        #self.weight_binX = np.array([100,125,150,175,200,250,300,400,500,600,2000],dtype=float)
+        #self.weight_binX = (np.exp(np.linspace(np.log(15), np.log(1000), 16))).tolist()
+        #self.weight_binX = np.array([10,25,30,35,40,45,50,60,75,100,125,150,175,200,250,300,400,500,600,2000],dtype=float) #Ref reweighting
+        self.weight_binY = np.array(
+            [-2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5], dtype=float) #Flat reweighting
+        #self.weight_binY = np.array([-2.5,-1.136,-0.516,-0.235,-0.107,-0.0484,-0.0220, 0.0220, 0.0484, 0.107, 0.235,0.516, 1.136, 2.5], dtype=float) #Flat-hybrid reweighting
+         #self.weight_binY = np.array(
+         #   [-2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5], dtype=float) #Ref reweighting
+
+        self.global_branches = ['jet_pt', 'jet_eta',
+                                'nCpfcand','nNpfcand',
+                                'nsv','npv',
+                                'TagVarCSV_trackSumJetEtRatio',
+                                'TagVarCSV_trackSumJetDeltaR',
+                                'TagVarCSV_vertexCategory',
+                                'TagVarCSV_trackSip2dValAboveCharm',
+                                'TagVarCSV_trackSip2dSigAboveCharm',
+                                'TagVarCSV_trackSip3dValAboveCharm',
+                                'TagVarCSV_trackSip3dSigAboveCharm',
+                                'TagVarCSV_jetNSelectedTracks',
+                                'TagVarCSV_jetNTracksEtaRel']
+                
+        
+        self.cpf_branches = ['Cpfcan_BtagPf_trackEtaRel',
+                             'Cpfcan_BtagPf_trackPtRel',
+                             'Cpfcan_BtagPf_trackPPar',
+                             'Cpfcan_BtagPf_trackDeltaR',
+                             'Cpfcan_BtagPf_trackPParRatio',
+                             'Cpfcan_BtagPf_trackSip2dVal',
+                             'Cpfcan_BtagPf_trackSip2dSig',
+                             'Cpfcan_BtagPf_trackSip3dVal',
+                             'Cpfcan_BtagPf_trackSip3dSig',
+                             'Cpfcan_BtagPf_trackJetDistVal',
+                             'Cpfcan_ptrel', #'Cpfcan_eta', 'Cpfcan_phi',
+                             'Cpfcan_drminsv',
+                             #'Cpfcan_distminsv',
+                             'Cpfcan_VTX_ass',
+                             'Cpfcan_puppiw',
+                             'Cpfcan_chi2',
+                             'Cpfcan_quality']
+                             #'Cpfcan_nhitpixelBarrelLayer1', 'Cpfcan_nhitpixelBarrelLayer2', 'Cpfcan_nhitpixelBarrelLayer3', 'Cpfcan_nhitpixelBarrelLayer4',
+                             #'Cpfcan_nhitpixelEndcapLayer1', 'Cpfcan_nhitpixelEndcapLayer2', 'Cpfcan_numberOfValidHits', 'Cpfcan_numberOfValidPixelHits',
+                             #'Cpfcan_numberOfValidStripHits', 'Cpfcan_numberOfValidStripTIBHits', 'Cpfcan_numberOfValidStripTIDHits', 'Cpfcan_numberOfValidStripTOBHits',
+                             #'Cpfcan_numberOfValidStripTECHits']
+
+        self.n_cpf = 25
+
+        self.npf_branches = ['Npfcan_ptrel', 'Npfcan_etarel', 'Npfcan_phirel', 'Npfcan_deltaR','Npfcan_isGamma','Npfcan_HadFrac','Npfcan_drminsv','Npfcan_puppiw']
+        self.n_npf = 25
+
+        self.vtx_branches = ['sv_pt','sv_deltaR',
+                             'sv_mass',
+                             'sv_etarel',
+                             'sv_phirel',
+                             'sv_ntracks',
+                             'sv_chi2',
+                             'sv_normchi2',
+                             'sv_dxy',
+                             'sv_dxysig',
+                             'sv_d3d',
+                             'sv_d3dsig',
+                             'sv_costhetasvpv',
+                             'sv_enratio',
+        ]
+
+        self.n_vtx = 5
+        
+        self.cpf_pts_branches = ['Cpfcan_pt','Cpfcan_eta',
+                                 'Cpfcan_phi', 'Cpfcan_e']
+                                 #'Cpfcan_nhitpixelBarrelLayer1', 'Cpfcan_nhitpixelBarrelLayer2',
+                                 #'Cpfcan_nhitpixelEndcapLayer1', 'Cpfcan_nhitpixelEndcapLayer2',
+                                 #'Cpfcan_numberOfValidHits', 'Cpfcan_numberOfValidPixelHits']
+        
+        self.npf_pts_branches = ['Npfcan_pt','Npfcan_eta', 
+                                 'Npfcan_phi', 'Npfcan_e']
+        
+        self.vtx_pts_branches = ['sv_pt','sv_eta',
+                                 'sv_phi','sv_e']
+
+#        self.pair_branches = ['pairwise_dist2',
+ #                             'pairwise_pca_distance_tanh10','pairwise_pca_significance_tanh0p07',
+  #                            'pairwise_dotprod1','pairwise_dotprod2',
+   #                           'pairwise_pca_dist1_tanh','pairwise_pca_dist2_tanh',
+    #                          'pairwise_pca_jetAxis_dist_tanh5','pairwise_pca_jetAxis_dotprod']
+     #   self.n_pair = 325
+
+        self.reduced_truth = ['isB','isBB','isLeptonicB','isC','isUDS','isG']
+        #self.reduced_truth = ['isB','isC','isUDS','isG']
+        
+    def createWeighterObjects(self, allsourcefiles):
+        # 
+        # Calculates the weights needed for flattening the pt/eta spectrum
+        
+        from DeepJetCore.Weighter import Weighter
+        weighter = Weighter()
+        weighter.undefTruth = self.undefTruth
+        weighter.class_weights = self.class_weights
+
+        branches = [self.weightbranchX,self.weightbranchY]
+        branches.extend(self.truth_branches)
+
+        if self.remove:
+            weighter.setBinningAndClasses(
+                [self.weight_binX,self.weight_binY],
+                self.weightbranchX,self.weightbranchY,
+                self.truth_branches, self.red_classes,
+                self.truth_red_fusion, method = self.referenceclass
+            )
+
+        counter=0
+        #import ROOT
+        #from root_numpy import tree2array, root2array
+        #import uproot3 as u3
+        #import pandas as pd
+        
+        if self.remove:
+            for fname in allsourcefiles:
+                fileTimeOut(fname, 120)
+                events = u.open(fname)["deepntuplizer/tree"]
+                nparray = events.arrays(branches, library = 'np')
+                keys = list(nparray.keys())
+                for k in range(len(branches)):
+                    nparray[branches[k]] = nparray.pop(keys[k])
+                nparray = pd.Series(nparray)
+#                nparray = root2array(
+ #                   fname,
+  #                  treename = "deepntuplizer/tree",
+   #                 stop = None,
+    #                branches = branches
+     #           )
+    
+                norm_hist = True
+                if self.referenceclass == 'flatten':
+                    norm_hist = False
+                weighter.addDistributions(nparray, norm_h = norm_hist)
+                #del nparray
+                counter=counter+1
+            weighter.createRemoveProbabilitiesAndWeights(self.referenceclass)
+            weighter.printHistos('/afs/cern.ch/user/a/ademoor/Flatten/') #If you need to print the 2D histo, choose your output dir
+            return {'weigther':weighter}
+    
+    def convertFromSourceFile(self, filename, weighterobjects, istraining):
+
+        # Function to produce the numpy training arrays from root files
+
+        from DeepJetCore.Weighter import Weighter
+        from DeepJetCore.stopwatch import stopwatch
+        sw=stopwatch()
+        swall=stopwatch()
+        if not istraining:
+            self.remove = False
+
+        def reduceTruth(uproot_arrays):
+            
+            b = uproot_arrays['isB']
+            
+            bb = uproot_arrays['isBB']
+            gbb = uproot_arrays['isGBB']
+            
+            bl = uproot_arrays['isLeptonicB']
+            blc = uproot_arrays['isLeptonicB_C']
+            lepb = bl+blc
+            
+            c = uproot_arrays['isC']
+            cc = uproot_arrays['isCC']
+            gcc = uproot_arrays['isGCC']
+            
+            ud = uproot_arrays['isUD']
+            s = uproot_arrays['isS']
+            uds = ud+s
+            
+            g = uproot_arrays['isG']
+            
+            return np.vstack((b,bb+gbb,lepb,c+cc+gcc,uds,g)).transpose()
+            #return np.vstack((b+bb+gbb+lepb,c+cc+gcc,uds,g)).transpose()
+        
+        print('reading '+filename)
+        
+        import ROOT
+        #from root_numpy import tree2array, root2array
+        fileTimeOut(filename,120) #give eos a minute to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get("deepntuplizer/tree")
+        self.nsamples = tree.GetEntries()
+        
+        # user code, example works with the example 2D images in root format generated by make_example_data
+        from DeepJetCore.preprocessing import MeanNormZeroPad,MeanNormZeroPadParticles
+
+
+        x_global = uproot_tree_to_numpy(filename,
+                                        self.global_branches,1,self.nsamples,
+                                        treename='deepntuplizer/tree', flat = True)
+
+        x_cpf = uproot_tree_to_numpy(filename,
+                                     self.cpf_branches,self.n_cpf,self.nsamples,
+                                     treename='deepntuplizer/tree', flat = False)
+
+        x_npf = uproot_tree_to_numpy(filename,
+                                         self.npf_branches,self.n_npf,self.nsamples,
+                                     treename='deepntuplizer/tree', flat = False)
+
+        x_vtx = uproot_tree_to_numpy(filename,
+                                         self.vtx_branches,self.n_vtx,self.nsamples,
+                                     treename='deepntuplizer/tree', flat = False)
+
+        cpf_pts = uproot_tree_to_numpy(filename,
+                                        self.cpf_pts_branches,self.n_cpf,self.nsamples,
+                                        treename='deepntuplizer/tree', flat = True)
+
+        npf_pts = uproot_tree_to_numpy(filename,
+                                     self.npf_pts_branches,self.n_npf,self.nsamples,
+                                     treename='deepntuplizer/tree', flat = False)
+
+        vtx_pts = uproot_tree_to_numpy(filename,
+                                         self.vtx_pts_branches,self.n_vtx,self.nsamples,
+                                     treename='deepntuplizer/tree', flat = False)
+
+#        x_pair = uproot_tree_to_numpy(filename,
+ #                                        self.pair_branches,self.n_pair,self.nsamples,
+  #                                   treename='deepntuplizer/tree', flat = False)
+
+
+#        import uproot3 as uproot
+        urfile = u.open(filename)["deepntuplizer/tree"]
+        truth_arrays = urfile.arrays(self.truth_branches, library='numpy')
+        truth = reduceTruth(truth_arrays)
+        truth = truth.astype(dtype='float32', order='C') #important, float32 and C-type!
+
+
+        x_global = x_global.astype(dtype='float32', order='C')
+        x_cpf = x_cpf.astype(dtype='float32', order='C')
+        x_npf = x_npf.astype(dtype='float32', order='C')
+        x_vtx = x_vtx.astype(dtype='float32', order='C')
+        cpf_pts = cpf_pts.astype(dtype='float32', order='C')
+        npf_pts = npf_pts.astype(dtype='float32', order='C')
+        vtx_pts = vtx_pts.astype(dtype='float32', order='C')
+   #     x_pair = x_pair.astype(dtype='float32', order='C')
+        
+        if self.remove:
+#            import uproot as u
+            b = [self.weightbranchX,self.weightbranchY]
+            b.extend(self.truth_branches)
+            b.extend(self.undefTruth)
+            fileTimeOut(filename, 120)
+            events = u.open(filename)["deepntuplizer/tree"]
+            for_remove = events.arrays(b, library = 'pd')
+
+#            for_remove = root2array(
+ #               filename,
+  #              treename = "deepntuplizer/tree",
+   #             stop = None,
+    #            branches = b
+     #       )
+            notremoves=weighterobjects['weigther'].createNotRemoveIndices(for_remove, use_uproot = True)
+            undef=for_remove['isUndefined']
+            notremoves-=undef
+            pu=for_remove['isPU']
+            notremoves-=pu
+            print('took ', sw.getAndReset(), ' to create remove indices')
+
+#        random_pick = np.random.rand(x_global.shape[0])
+ #       selection1 = (x_global[:,0] <= 80)
+  #      selection2 = (x_global[:,0] > 80) & (x_global[:,0] <= 140)
+   #     selection3 = (x_global[:,0] > 140) & (x_global[:,0] <= 186)
+    #    selection4 = (x_global[:,0] > 186) & (x_global[:,0] <= 247)
+
+#        notremoves[selection1] -= 4*random_pick[selection1]
+ #       notremoves[selection2] -= 2.667*random_pick[selection2]
+  #      notremoves[selection3] -= 2*random_pick[selection3]
+   #     notremoves[selection4] -= 1*random_pick[selection4]
+
+        if self.remove:
+            print('remove')
+            x_global=x_global[notremoves > 0]
+            x_cpf=x_cpf[notremoves > 0]
+            x_npf=x_npf[notremoves > 0]
+            x_vtx=x_vtx[notremoves > 0]
+            cpf_pts=cpf_pts[notremoves > 0]
+            npf_pts=npf_pts[notremoves > 0]
+            vtx_pts=vtx_pts[notremoves > 0]
+#            x_pair=x_pair[notremoves > 0]
+            truth=truth[notremoves > 0]
+
+        newnsamp=x_global.shape[0]
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        
+        print('remove nans')
+        x_global = np.where(np.isfinite(x_global) , x_global, 0)
+        x_cpf = np.where(np.isfinite(x_cpf), x_cpf, 0)
+        x_npf = np.where(np.isfinite(x_npf), x_npf, 0)
+        x_vtx = np.where(np.isfinite(x_vtx), x_vtx, 0)
+        cpf_pts = np.where(np.isfinite(cpf_pts), cpf_pts, 0)
+        npf_pts = np.where(np.isfinite(npf_pts), npf_pts, 0)
+        vtx_pts = np.where(np.isfinite(vtx_pts), vtx_pts, 0)
+ #       x_pair = np.where(np.isfinite(x_pair), x_pair, 0)
+        
+        return [x_global, x_cpf, x_npf, x_vtx, cpf_pts, npf_pts, vtx_pts], [truth], []
+
+    # defines how to write out the prediction
+    def writeOutPrediction(self, predicted, features, truth, weights, outfilename, inputfile):
+        # predicted will be a list
+        
+<<<<<<< HEAD:modules/datastructures/TrainData_deepFlavour_BACKUP.py
+        from root_numpy import array2root
+        out = np.core.records.fromarrays(np.vstack( (predicted[0].transpose(),truth[0].transpose(), features[0][:,0:2].transpose())),
+                                        names='prob_isB, prob_isC, prob_isUDS, prob_isG, isB, isC, isUDS, isG, jet_pt, jet_eta')
+                                        #names='prob_isB, prob_isBB, prob_isLeptB, prob_isC, prob_isUDS, prob_isG, isB, isBB, isLeptB, isC, isUDS, isG, jet_pt, jet_eta')
+                                        
+        array2root(out, outfilename, 'tree')
+
+    ### This back up code is available if you don't define global vars of your jet as inputs ### 
+
+    # defines how to write out the prediction
+    #def writeOutPrediction(self, predicted, features, truth, weights, outfilename, inputfile):
+     #   # predicted will be a list
+      #  spectator_branches = ['jet_pt','jet_eta']
+       # from root_numpy import array2root
+        #if inputfile[-5:] == 'djctd':
+         #               print("storing normed pt and eta... run on root files if you want something else for now")
+          #              spectators = features[0][:,0:2].transpose()
+        #else:
+         #   import uproot3 as uproot
+          #  print(inputfile)
+           # urfile = uproot.open(inputfile)["deepntuplizer/tree"]
+            #spectator_arrays = urfile.arrays(spectator_branches)
+            #print(spectator_arrays)
+            #spectators = [spectator_arrays[a.encode()] for a in spectator_branches]
+        
+        #out = np.core.records.fromarrays(np.vstack( (predicted[0].transpose(),truth[0].transpose(), spectators) ),
+         #                               names='prob_isB, prob_isBB,prob_isLeptB, prob_isC,prob_isUDS,prob_isG,isB, isBB, isLeptB, isC,isUDS,isG,jet_pt, jet_eta')
+        #array2root(out, outfilename, 'tree')
 
 
 class TrainData_DFE(TrainData):
@@ -986,6 +1339,8 @@ class TrainData_ParT(TrainData):
     def writeOutPrediction(self, predicted, features, truth, weights, outfilename, inputfile):
         # predicted will be a list
         
+=======
+>>>>>>> a1875e346d59730c842ba1ad63b91f42f5b8afa4:modules/datastructures/TrainData_deepFlavour.py
         #from root_numpy import array2root
         #out = np.core.records.fromarrays(np.vstack( (predicted[0].transpose(),truth[0].transpose(), features[0][:,0:2].transpose())),
          #                               #names='prob_isB, prob_isC, prob_isUDS, prob_isG, isB, isC, isUDS, isG, jet_pt, jet_eta')
@@ -1006,6 +1361,7 @@ class TrainData_ParT(TrainData):
         files["tree"] = out
         files["tree"]
         files["tree"].show()
+<<<<<<< HEAD:modules/datastructures/TrainData_deepFlavour_BACKUP.py
         
         
         out_numpy = np.core.records.fromarrays(np.vstack( (predicted[0].transpose(),truth[0].transpose(), features[0][:,0:2].transpose() ) ),
@@ -1779,3 +2135,5 @@ class TrainData_DF_DeepCSV_outputs(TrainData):
         out = np.core.records.fromarrays(np.vstack( (predicted[0].transpose(), truth[0].transpose(), features[0][:,0:2].transpose() ) ),
                                          names='prob_isB, prob_isBB, prob_isC, prob_isUDSG, isB, isBB, isC, isUDSG, jet_pt, jet_eta')
         array2root(out, outfilename, 'tree')
+=======
+>>>>>>> a1875e346d59730c842ba1ad63b91f42f5b8afa4:modules/datastructures/TrainData_deepFlavour.py
