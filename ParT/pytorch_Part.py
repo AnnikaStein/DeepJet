@@ -322,4 +322,4 @@ class training_base(object):
                     
                     self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, is_best = False)
                 
-                traingen.shuffleFilelist()
+                traingen.shuffleFileList() # Note: DJC3 shuffleFileList, older: shuffleFilelist

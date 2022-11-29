@@ -25,9 +25,10 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pytorch_deepjet import DeepJet
+#from pytorch_deepjet import DeepJet
 #from pytorch_deepjet_transformer_v2 import DeepJetTransformer, ParticleTransformer
-from pytorch_deepjet_transformer_v2_corr import DeepJetTransformer, ParticleTransformer
+#from pytorch_deepjet_transformer_v2_corr import DeepJetTransformer, ParticleTransformer
+from pytorch_deepjet_transformer_v4_corr import DeepJetTransformer, ParticleTransformer
 from torch.optim import Adam, SGD
 from tqdm import tqdm
 
@@ -121,10 +122,16 @@ for inputfile in inputdatafiles:
         if args.unbuffered:
             td.readFromFile(use_inputdir+"/"+inputfile)
         else:
-            td.readFromFileBuffered(use_inputdir+"/"+inputfile)
+            if inputdir[:4] == '/eos':
+                td.readFromFileBuffered(inputfile)
+            else:
+                td.readFromFileBuffered(use_inputdir+"/"+inputfile)
     else:
         print('converting '+inputfile)
-        td.readFromSourceFile(use_inputdir+"/"+inputfile, dc.weighterobjects, istraining=False)
+        if inputfile[:4] == '/eos':
+            td.readFromSourceFile(inputfile, dc.weighterobjects, istraining=False)
+        else:
+            td.readFromSourceFile(use_inputdir+"/"+inputfile, dc.weighterobjects, istraining=False)
 
     gen = TrainDataGenerator()
     if batchsize < 1:
@@ -140,9 +147,9 @@ for inputfile in inputdatafiles:
     
     predicted = test_loop(gen.feedNumpyData(), model, nbatches=gen.getNBatches(), pbar = pbar)
     
-    x = td.transferFeatureListToNumpy()
-    w = td.transferWeightListToNumpy()
-    y = td.transferTruthListToNumpy()
+    x = td.transferFeatureListToNumpy(args.pad_rowsplits)
+    w = td.transferWeightListToNumpy(args.pad_rowsplits)
+    y = td.transferTruthListToNumpy(args.pad_rowsplits)
 
     td.clear()
     gen.clear()
