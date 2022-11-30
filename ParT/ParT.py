@@ -354,23 +354,23 @@ class LinLayer2(nn.Module):
 
 class InputProcess(nn.Module):
 
-    def __init__(self, **kwargs):
+    def __init__(self, cpf_dim, npf_dim, vtx_dim, embed_dim, **kwargs):
         super(InputProcess, self).__init__(**kwargs)
         
-        self.cpf_bn0 = torch.nn.BatchNorm1d(17, eps = 0.001, momentum = 0.1)
-        self.cpf_conv1 = InputConv(17,8*16)
-        self.cpf_conv2 = InputConv(8*16,8*16*4)
-        self.cpf_conv3 = InputConv(8*16*4,8*16)
+        self.cpf_bn0 = torch.nn.BatchNorm1d(cpf_dim, eps = 0.001, momentum = 0.1)
+        self.cpf_conv1 = InputConv(cpf_dim,embed_dim)
+        self.cpf_conv2 = InputConv(embed_dim,embed_dim*4)
+        self.cpf_conv3 = InputConv(embed_dim*4,embed_dim)
 
-        self.npf_bn0 = torch.nn.BatchNorm1d(8, eps = 0.001, momentum = 0.1)
-        self.npf_conv1 = InputConv(8,8*16)
-        self.npf_conv2 = InputConv(8*16,8*16*4)
-        self.npf_conv3 = InputConv(8*16*4,8*16)
+        self.npf_bn0 = torch.nn.BatchNorm1d(npf_dim, eps = 0.001, momentum = 0.1)
+        self.npf_conv1 = InputConv(npf_dim,embed_dim)
+        self.npf_conv2 = InputConv(embed_dim,embed_dim*4)
+        self.npf_conv3 = InputConv(embed_dim*4,embed_dim)
 
-        self.vtx_bn0 = torch.nn.BatchNorm1d(14, eps = 0.001, momentum = 0.1)
-        self.vtx_conv1 = InputConv(14,8*16)
-        self.vtx_conv2 = InputConv(8*16,8*16*4)
-        self.vtx_conv3 = InputConv(8*16*4,8*16)
+        self.vtx_bn0 = torch.nn.BatchNorm1d(vtx_dim, eps = 0.001, momentum = 0.1)
+        self.vtx_conv1 = InputConv(vtx_dim,embed_dim)
+        self.vtx_conv2 = InputConv(embed_dim,embed_dim*4)
+        self.vtx_conv3 = InputConv(embed_dim*4,embed_dim)
 
 #        self.meta_conv = InputConv(8*16,8*16)
 
@@ -392,7 +392,6 @@ class InputProcess(nn.Module):
         vtx = self.vtx_conv3(vtx, vtx, skip = False)
 
         out = torch.cat((cpf,npf,vtx), dim = 2)
-#        out = self.meta_conv(out, out, skip = True)
         out = torch.transpose(out, 1, 2)
         
         return out
@@ -711,38 +710,42 @@ class ParticleTransformer(nn.Module):
 
     def __init__(self,
                  num_classes = 6,
-                 num_enc = 6,
+                 num_enc = 8,
+                 num_head = 8,
+                 embed_dim = 128,
+                 cpf_dim = 17,
+                 npf_dim = 8,
+                 vtx_dim = 12,
                  for_inference = False,
                  **kwargs):
         super(ParticleTransformer, self).__init__(**kwargs)
 
         self.for_inference = for_inference
         self.num_enc_layers = num_enc
-        self.InputProcess = InputProcess()
-        self.Linear = nn.Linear(8*16, num_classes)
+        self.InputProcess = InputProcess(cpf_dim, npf_dim, vtx_dim, embed_dim)
+        self.Linear = nn.Linear(embed_dim, num_classes)
 
-        self.pair_embed = PairEmbed(4, [64,64,64] + [8], for_onnx=for_inference)
-        self.cls_norm = torch.nn.LayerNorm(128)
+        self.pair_embed = PairEmbed(4, [64,64,64] + [num_head], for_onnx=for_inference)
+        self.cls_norm = torch.nn.LayerNorm(embed_dim)
 
-        self.EncoderLayer = HF_TransformerEncoderLayer(d_model=8*16, nhead=8, dropout = 0.1)
+        self.EncoderLayer = HF_TransformerEncoderLayer(d_model=embed_dim, nhead=num_head, dropout = 0.1)
         self.Encoder = HF_TransformerEncoder(self.EncoderLayer, num_layers=num_enc)
 
-        self.CLS_EncoderLayer1 = CLS_TransformerEncoderLayer(d_model=8*16, nhead=8, dropout = 0.1)
+        self.CLS_EncoderLayer1 = CLS_TransformerEncoderLayer(d_model=embed_dim, nhead=num_head, dropout = 0.1)
         if(self.num_enc_layers > 3):
-            self.CLS_EncoderLayer2 = CLS_TransformerEncoderLayer(d_model=8*16, nhead=8, dropout = 0.1)
+            self.CLS_EncoderLayer2 = CLS_TransformerEncoderLayer(d_model=embed_dim, nhead=num_head, dropout = 0.1)
 
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, 8*16), requires_grad=True)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim), requires_grad=True)
         trunc_normal_(self.cls_token, std=.02)
 
     def forward(self, inpt):
 
         cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = inpt[0], inpt[1], inpt[2], inpt[3], inpt[4], inpt[5]
-        #cpf = cpf[:,:,[0,1,2,3,4,5,6,7,8,9,10,11,13,14,15,16]]
 
         padding_mask = torch.cat((cpf_4v[:,:,:1],npf_4v[:,:,:1],vtx_4v[:,:,:1]), dim = 1)
         padding_mask =torch.eq(padding_mask[:,:,0], 0.0)
 
-        enc = self.InputProcess(cpf[:,:,:], npf, vtx)
+        enc = self.InputProcess(cpf, npf, vtx)
 
         cpf_4v = build_E_p(cpf_4v)
         npf_4v = build_E_p(npf_4v)

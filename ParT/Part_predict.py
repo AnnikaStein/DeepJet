@@ -25,9 +25,9 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pytorch_deepjet import DeepJet
+#from pytorch_deepjet import DeepJet
 #from pytorch_deepjet_transformer_v2 import DeepJetTransformer, ParticleTransformer
-from pytorch_deepjet_transformer_v2_corr import DeepJetTransformer, ParticleTransformer
+from ParT import DeepJetTransformer, ParticleTransformer
 from torch.optim import Adam, SGD
 from tqdm import tqdm
 
@@ -87,7 +87,14 @@ else:
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if args.model == 'ParticleTransformer':
-    model = ParticleTransformer(num_classes = 6, num_enc = 3, for_inference = False)
+    model = ParticleTransformer(num_classes = 6,
+                                num_enc = 3,
+                                num_head = 8,
+                                embed_dim = 128,
+                                cpf_dim = 17,
+                                npf_dim = 8,
+                                vtx_dim = 12,
+                                for_inference = False)
     
 check = torch.load(args.inputModel, map_location=torch.device('cpu'))
 model.to(device)
