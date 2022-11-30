@@ -5,7 +5,6 @@ import copy
 import torch
 import torch.nn as nn
 from functools import partial
-from FundationTransformer import *
 import numpy as np
 
 def node_distance(x):
