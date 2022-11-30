@@ -62,13 +62,21 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
     xadv_cpf = cpf.clone().detach()
     xadv_npf = npf.clone().detach()
     xadv_vtx = vtx.clone().detach()
+    xadv_cpf_pts = cpf_pts.clone().detach()
+    xadv_npf_pts = npf_pts.clone().detach()
+    xadv_vtx_pts = vtx_pts.clone().detach()
 
     xadv_glob.requires_grad = True
     xadv_cpf.requires_grad = True
     xadv_npf.requires_grad = True
     xadv_vtx.requires_grad = True
+    xadv_cpf_pts.requires_grad = True
+    xadv_npf_pts.requires_grad = True
+    xadv_vtx_pts.requires_grad = True
 
-    preds = thismodel(xadv_glob,xadv_cpf,xadv_npf,xadv_vtx)
+    preds = thismodel(xadv_glob,
+                      xadv_cpf,xadv_npf,xadv_vtx,
+                      xadv_cpf_pts,xadv_npf_pts,xadv_vtx_pts)
 
     loss = thiscriterion(preds, targets)
 
@@ -80,11 +88,17 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
         dx_cpf = torch.sign(xadv_cpf.grad.detach())
         dx_npf = torch.sign(xadv_npf.grad.detach())
         dx_vtx = torch.sign(xadv_vtx.grad.detach())
+        dx_cpf_pts = torch.sign(xadv_cpf_pts.grad.detach())
+        dx_npf_pts = torch.sign(xadv_npf_pts.grad.detach())
+        dx_vtx_pts = torch.sign(xadv_vtx_pts.grad.detach())
 
         xadv_glob += epsilon * epsilon_factors['glob'] * dx_glob
         xadv_cpf += epsilon * epsilon_factors['cpf'] * dx_cpf
         xadv_npf += epsilon * epsilon_factors['npf'] * dx_npf
         xadv_vtx += epsilon * epsilon_factors['vtx'] * dx_vtx
+        xadv_cpf_pts += epsilon * epsilon_factors['cpf_pts'] * dx_cpf_pts
+        xadv_npf_pts += epsilon * epsilon_factors['npf_pts'] * dx_npf_pts
+        xadv_vtx_pts += epsilon * epsilon_factors['vtx_pts'] * dx_vtx_pts
 
         if reduced:
             for i in range(vars_per_candidate['glob']):
@@ -152,6 +166,58 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
                             high_impact = torch.abs(difference) > allowed_perturbation
 
                             if torch.sum(high_impact)!=0:
-                                xadv_vtx[high_impact,j,i] = vtx[high_impact,j,i] + allowed_perturbation[high_impact] * dx_vtx[high_impact,j,i]   
+                                xadv_vtx[high_impact,j,i] = vtx[high_impact,j,i] + allowed_perturbation[high_impact] * dx_vtx[high_impact,j,i] 
+### NEW
 
-        return xadv_glob.detach(),xadv_cpf.detach(),xadv_npf.detach(),xadv_vtx.detach()
+            for j in range(cands_per_variable['cpf_pts']):
+                for i in range(vars_per_candidate['cpf_pts']):
+                    if i in integer_variables_by_candidate['cpf_pts']:
+                        xadv_cpf_pts[:,j,i] = cpf_pts[:,j,i]
+                    else:
+                        defaults_cpf_pts = cpf_pts[:,j,i].cpu() == defaults_per_variable['cpf_pts'][i]
+                        if torch.sum(defaults_cpf_pts) != 0:
+                            xadv_cpf_pts[:,j,i][defaults_cpf_pts] = cpf_pts[:,j,i][defaults_cpf_pts]
+
+                        if restrict_impact > 0:
+                            difference = xadv_cpf_pts[:,j,i] - cpf_pts[:,j,i]
+                            allowed_perturbation = restrict_impact * torch.abs(cpf_pts[:,j,i])
+                            high_impact = torch.abs(difference) > allowed_perturbation
+
+                            if torch.sum(high_impact)!=0:
+                                xadv_cpf_pts[high_impact,j,i] = cpf_pts[high_impact,j,i] + allowed_perturbation[high_impact] * dx_cpf_pts[high_impact,j,i]
+
+            for j in range(cands_per_variable['npf_pts']):
+                for i in range(vars_per_candidate['npf_pts']):
+                    if i in integer_variables_by_candidate['npf_pts']:
+                        xadv_npf_pts[:,j,i] = npf_pts[:,j,i]
+                    else:
+                        defaults_npf_pts = npf_pts[:,j,i].cpu() == defaults_per_variable['npf_pts'][i]
+                        if torch.sum(defaults_npf_pts) != 0:
+                            xadv_npf_pts[:,j,i][defaults_npf_pts] = npf_pts[:,j,i][defaults_npf_pts]
+
+                        if restrict_impact > 0:
+                            difference = xadv_npf_pts[:,j,i] - npf_pts[:,j,i]
+                            allowed_perturbation = restrict_impact * torch.abs(npf_pts[:,j,i])
+                            high_impact = torch.abs(difference) > allowed_perturbation
+
+                            if torch.sum(high_impact)!=0:
+                                xadv_npf_pts[high_impact,j,i] = npf_pts[high_impact,j,i] + allowed_perturbation[high_impact] * dx_npf_pts[high_impact,j,i]
+
+            for j in range(cands_per_variable['vtx_pts']):
+                for i in range(vars_per_candidate['vtx_pts']):
+                    if i in integer_variables_by_candidate['vtx_pts']:
+                        xadv_vtx_pts[:,j,i] = vtx_pts[:,j,i]
+                    else:
+                        defaults_vtx_pts = vtx_pts[:,j,i].cpu() == defaults_per_variable['vtx_pts'][i]
+                        if torch.sum(defaults_vtx_pts) != 0:
+                            xadv_vtx_pts[:,j,i][defaults_vtx_pts] = vtx_pts[:,j,i][defaults_vtx_pts]
+
+                        if restrict_impact > 0:
+                            difference = xadv_vtx_pts[:,j,i] - vtx_pts[:,j,i]
+                            allowed_perturbation = restrict_impact * torch.abs(vtx_pts[:,j,i])
+                            high_impact = torch.abs(difference) > allowed_perturbation
+
+                            if torch.sum(high_impact)!=0:
+                                xadv_vtx_pts[high_impact,j,i] = vtx_pts[high_impact,j,i] + allowed_perturbation[high_impact] * dx_vtx_pts[high_impact,j,i]
+                                
+        return xadv_glob.detach(),xadv_cpf.detach(),xadv_npf.detach(),xadv_vtx.detach(),xadv_cpf_pts.detach(),xadv_npf_pts.detach(),xadv_vtx_pts.detach()

@@ -10,12 +10,12 @@ cands_per_variable = {
 }
 vars_per_candidate = {
     'glob' : 15,
-    'cpf' : 16,
-    'npf' : 6,
-    'vtx' : 12,
-    'cpf_pts' : 16,
-    'npf_pts' : 6,
-    'vtx_pts' : 12,
+    'cpf' : 17,
+    'npf' : 8,
+    'vtx' : 14,
+    'cpf_pts' : 4,
+    'npf_pts' : 4,
+    'vtx_pts' : 4,
     #'pxl' : ,
 }
 defaults_per_variable_before_prepro = {
@@ -50,9 +50,9 @@ defaults_per_variable = {
 }
 integer_variables_by_candidate = {
     'glob' : [2,3,4,5,8,13,14],
-    'cpf' : [12,13,14,15],
-    'npf' : [2],
-    'vtx' : [3],
+    'cpf' : [13,14,15,16],
+    'npf' : [4],
+    'vtx' : [5],
     'cpf_pts' : [],
     'npf_pts' : [],
     'vtx_pts' : [],
