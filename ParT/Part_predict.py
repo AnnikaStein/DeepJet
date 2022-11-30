@@ -25,9 +25,9 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pytorch_deepjet import DeepJet
+#from pytorch_deepjet import DeepJet
 #from pytorch_deepjet_transformer_v2 import DeepJetTransformer, ParticleTransformer
-from pytorch_deepjet_transformer_v2_corr import DeepJetTransformer, ParticleTransformer
+from ParT import DeepJetTransformer, ParticleTransformer
 from torch.optim import Adam, SGD
 from tqdm import tqdm
 
