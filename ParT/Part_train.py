@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from pytorch_Part import training_base
 from ParticleTransformer import get_model
-from pytorch_deepjet_transformer_v4_corr import DeepJetTransformer, ParticleTransformer
+from ParT import ParticleTransformer
 #from pytorch_deepjet_transformer_v4 import DeepJetTransformer, ParticleTransformer
 #from ParT_old import DeepJetTransformer, ParticleTransformer
 from pytorch_ranger import *
