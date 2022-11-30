@@ -19,7 +19,15 @@ mil = list(range(num_epochs - lr_epochs, num_epochs))
 print(lr_rate)
 print(mil)
 
-model = ParticleTransformer(num_classes = 6, num_enc = 3)
+model = ParticleTransformer(num_classes = 6,
+                            num_enc = 3,
+                            num_head = 8,
+                            embed_dim = 128,
+                            cpf_dim = 17,
+                            npf_dim = 8,
+                            vtx_dim = 12,
+                            for_inference = False)
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
