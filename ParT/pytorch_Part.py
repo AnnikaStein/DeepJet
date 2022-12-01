@@ -57,12 +57,12 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         #print('Attack type:',attack)
         if attack == 'Noise':
             #print('Do Noise')
-            glob = apply_noise(glob, 
-                               magn=att_magnitude,
-                               offset=[0],
-                               dev=device,
-                               restrict_impact=restrict_impact,
-                               var_group='glob')
+            #glob = apply_noise(glob, 
+            #                   magn=att_magnitude,
+            #                   offset=[0],
+            #                   dev=device,
+            #                   restrict_impact=restrict_impact,
+            #                   var_group='glob')
             cpf = apply_noise(cpf, 
                                magn=att_magnitude,
                                offset=[0],
@@ -102,14 +102,14 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
 
         elif attack == 'FGSM':
             #print('Do FGSM')
-            glob, cpf_4v, npf_4v, vtx_4v = fgsm_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
-                                               epsilon=att_magnitude,
-                                               dev=device,
-                                               targets=y,
-                                               thismodel=model,
-                                               thiscriterion=loss_fn,
-                                               restrict_impact=restrict_impact,
-                                               epsilon_factors=epsilon_factors)
+            glob, cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = fgsm_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
+                                                                      epsilon=att_magnitude,
+                                                                      dev=device,
+                                                                      targets=y,
+                                                                      thismodel=model,
+                                                                      thiscriterion=loss_fn,
+                                                                      restrict_impact=restrict_impact,
+                                                                      epsilon_factors=epsilon_factors)
             
         # Compute prediction and loss
         inpt = (cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v)
