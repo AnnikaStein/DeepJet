@@ -24,7 +24,12 @@ import copy
 
 import imp
 
-def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, acc_loss, scaler, scheduler):
+from attacks_ParT import *
+from definitions_ParT import epsilons_per_feature, vars_per_candidate
+
+glob_vars = vars_per_candidate['glob']
+
+def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, acc_loss, scaler, scheduler, attack, att_magnitude, restrict_impact, epsilon_factors):
     for b in range(nbatches):
         
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,6 +49,68 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         #pair = torch.Tensor(features_list[7]).to(device)
         #print(pair[0,:28,:])
         y = torch.Tensor(truth_list[0]).to(device)
+        
+        glob[:,:] = torch.where(glob[:,:] == -999., torch.zeros(len(glob),glob_vars).to(device), glob[:,:])
+        glob[:,:] = torch.where(glob[:,:] ==   -1., torch.zeros(len(glob),glob_vars).to(device), glob[:,:])
+        
+        # apply attack
+        #print('Attack type:',attack)
+        if attack == 'Noise':
+            #print('Do Noise')
+            glob = apply_noise(glob, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='glob')
+            cpf = apply_noise(cpf, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='cpf')
+            npf = apply_noise(npf, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='npf')
+            vtx = apply_noise(vtx, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='vtx')
+            cpf_4v = apply_noise(cpf_4v, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='cpf_pts')
+            npf_4v = apply_noise(npf_4v, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='npf_pts')
+            vtx_4v = apply_noise(vtx_4v, 
+                               magn=att_magnitude,
+                               offset=[0],
+                               dev=device,
+                               restrict_impact=restrict_impact,
+                               var_group='vtx_pts')
+
+        elif attack == 'FGSM':
+            #print('Do FGSM')
+            glob, cpf_4v, npf_4v, vtx_4v = fgsm_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
+                                               epsilon=att_magnitude,
+                                               dev=device,
+                                               targets=y,
+                                               thismodel=model,
+                                               thiscriterion=loss_fn,
+                                               restrict_impact=restrict_impact,
+                                               epsilon_factors=epsilon_factors)
+            
         # Compute prediction and loss
         inpt = (cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v)
         #ncpf = int(torch.max(glob[:,2]))
@@ -222,8 +289,8 @@ class training_base(object):
       #      del self.train_data
        #     del self.val_data
             
-    def saveModel(self,model, optimizer, epoch, scheduler, best_loss, is_best = False):
-        checkpoint = {'state_dict': model.state_dict(),'optimizer' :optimizer.state_dict(),'epoch': epoch,'scheduler': scheduler.state_dict(),'best_loss': best_loss}
+    def saveModel(self,model, optimizer, epoch, scheduler, best_loss, train_loss, val_loss, is_best = False):
+        checkpoint = {'state_dict': model.state_dict(),'optimizer' :optimizer.state_dict(),'epoch': epoch,'scheduler': scheduler.state_dict(),'best_loss': best_loss,'train_loss': train_loss,'val_loss': val_loss}
         if is_best:
             torch.save(checkpoint, self.outputDir+'checkpoint_best_loss.pth')
         else:
@@ -249,7 +316,7 @@ class training_base(object):
         self.val_data.setBatchSize(batchsize)
         
     def trainModel(self, nepochs, batchsize, batchsize_use_sum_of_squares = False, extend_truth_list_by=0,
-                   load_in_mem = False, max_files = -1, plot_batch_loss = False, **trainargs):
+                   load_in_mem = False, max_files = -1, plot_batch_loss = False, attack = None, att_magnitude = 0., restrict_impact = -1, **trainargs):
         
         self._initTraining(batchsize, batchsize_use_sum_of_squares)
         print('starting training')
@@ -283,6 +350,16 @@ class training_base(object):
             self.model.to(self.device)
             #self.optimizer.to(self.device)
             
+            epsilon_factors = {
+                'glob' : torch.Tensor(np.load(epsilons_per_feature['glob']).transpose()).to(self.device),
+                'cpf' : torch.Tensor(np.load(epsilons_per_feature['cpf']).transpose()).to(self.device),
+                'npf' : torch.Tensor(np.load(epsilons_per_feature['npf']).transpose()).to(self.device),
+                'vtx' : torch.Tensor(np.load(epsilons_per_feature['vtx']).transpose()).to(self.device),
+                'cpf_pts' : torch.Tensor(np.load(epsilons_per_feature['cpf_pts']).transpose()).to(self.device),
+                'npf_pts' : torch.Tensor(np.load(epsilons_per_feature['npf_pts']).transpose()).to(self.device),
+                'vtx_pts' : torch.Tensor(np.load(epsilons_per_feature['vtx_pts']).transpose()).to(self.device),
+            }
+            
             while(self.trainedepoches < nepochs):
            
                 #this can change from epoch to epoch
@@ -307,7 +384,7 @@ class training_base(object):
                     self.model.train()
                     for param_group in self.optimizer.param_groups:
                         print('/n Learning rate = '+str(param_group['lr'])+' /n')
-                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, acc_loss=0, scaler = self.scaler, scheduler = self.scheduler)
+                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, acc_loss=0, scaler = self.scaler, scheduler = self.scheduler, attack = attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact, epsilon_factors = epsilon_factors)
                     self.scheduler.step()
                 
                     self.model.eval()
@@ -317,9 +394,9 @@ class training_base(object):
                     
                     if(val_loss < self.best_loss):
                         self.best_loss = val_loss
-                        self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, is_best = True)
+                        self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = True)
 
                     
-                    self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, is_best = False)
+                    self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = False)
                 
                 traingen.shuffleFileList() # Note: DJC3 shuffleFileList, older: shuffleFilelist

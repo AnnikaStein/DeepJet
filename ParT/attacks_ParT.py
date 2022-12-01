@@ -57,7 +57,7 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
     if epsilon == 0:
         return sample
 
-    glob, cpf, npf, vtx = sample
+    glob, cpf, npf, vtx, cpf_pts, npf_pts, vtx_pts = sample
     xadv_glob = glob.clone().detach()
     xadv_cpf = cpf.clone().detach()
     xadv_npf = npf.clone().detach()

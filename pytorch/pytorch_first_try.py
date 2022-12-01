@@ -85,7 +85,7 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
                                                thismodel=model,
                                                thiscriterion=loss_fn,
                                                restrict_impact=restrict_impact,
-                                               epsilon_factors=epsilon_factors)   
+                                               epsilon_factors=epsilon_factors) 
         # Compute prediction and loss
         pred = model(glob,cpf,npf,vtx)
         loss = loss_fn(pred, y.type_as(pred))
