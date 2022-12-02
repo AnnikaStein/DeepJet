@@ -185,7 +185,11 @@ class TrainData_ParT(TrainData):
         self.n_vtx = 5
         
         self.cpf_pts_branches = ['Cpfcan_pt','Cpfcan_eta',
-                                 'Cpfcan_phi', 'Cpfcan_e']
+                                 'Cpfcan_phi', 'Cpfcan_e',
+                                 #'Cpfcan_nhitpixelBarrelLayer1', 'Cpfcan_nhitpixelBarrelLayer2',
+                                 #'Cpfcan_nhitpixelEndcapLayer1', 'Cpfcan_nhitpixelEndcapLayer2',
+                                 #'Cpfcan_numberOfValidHits', 'Cpfcan_numberOfValidPixelHits'
+                                ]
         
         self.npf_pts_branches = ['Npfcan_pt','Npfcan_eta',
                                  'Npfcan_phi', 'Npfcan_e']

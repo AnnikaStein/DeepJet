@@ -30,7 +30,8 @@ from definitions_ParT import epsilons_per_feature, vars_per_candidate
 glob_vars = vars_per_candidate['glob']
 
 def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, acc_loss, scaler, scheduler, attack, att_magnitude, restrict_impact, epsilon_factors):
-    for b in range(nbatches):
+    #for b in range(nbatches):
+    for b in range(2):
         
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         #should not happen unless files are broken (will give additional errors)
@@ -44,6 +45,7 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         npf = torch.Tensor(features_list[2]).to(device)
         vtx = torch.Tensor(features_list[3]).to(device)
         cpf_4v = torch.Tensor(features_list[4]).to(device)
+        cpf_4v = cpf_4v[:,:,:4]
         npf_4v = torch.Tensor(features_list[5]).to(device)
         vtx_4v = torch.Tensor(features_list[6]).to(device)
         #pair = torch.Tensor(features_list[7]).to(device)
@@ -102,14 +104,15 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
 
         elif attack == 'FGSM':
             #print('Do FGSM')
-            glob, cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = fgsm_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
-                                                                      epsilon=att_magnitude,
-                                                                      dev=device,
-                                                                      targets=y,
-                                                                      thismodel=model,
-                                                                      thiscriterion=loss_fn,
-                                                                      restrict_impact=restrict_impact,
-                                                                      epsilon_factors=epsilon_factors)
+            with torch.cuda.amp.autocast():
+                glob, cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = fgsm_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
+                                                                          epsilon=att_magnitude,
+                                                                          dev=device,
+                                                                          targets=y,
+                                                                          thismodel=model,
+                                                                          thiscriterion=loss_fn,
+                                                                          restrict_impact=restrict_impact,
+                                                                          epsilon_factors=epsilon_factors)
             
         # Compute prediction and loss
         inpt = (cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v)
@@ -120,7 +123,7 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         optimizer.zero_grad()
         with torch.cuda.amp.autocast():
             pred = model(inpt)
-            loss = loss_fn(pred, y.type_as(pred))
+            loss = loss_fn(pred, y.type_as(pred)) # batch loss
         scaler.scale(loss).backward()
         #scaler.unscale_(optimizer)
         #torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -129,9 +132,12 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
         #loss.backward()
         #optimizer.step()
         #scheduler.step()
-        acc_loss += loss.detach().item()
+        acc_loss += loss.detach().item() # batch loss, is a mean over individual losses in batch
         # Update progress bar description
-        avg_loss = acc_loss / (b + 1)
+        avg_loss = acc_loss / (b + 1) # per batch, the avg_loss is updated
+        # batch 0 -> batch0_loss / 1 = batch0_loss
+        # batch 1 -> (batch0_loss + batch1_loss)/2
+        # batch 2 -> (batch0_loss + batch1_loss + batch2_loss) / 3
         #if((b % 100) == 0):
         #    print(f"Training Error: \n batch : {(b):>0.1f} / {(nbatches):>0.1f}, Avg loss: {avg_loss:>6f} \n")
         desc = f'Epoch {epoch+1} - loss {avg_loss:.6f}'
@@ -142,10 +148,11 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
 
 def val_loop(dataloader, nbatches, model, loss_fn, device, epoch):
     num_batches = nbatches
-    test_loss, correct = 0, 0
+    test_loss, correct, total = 0, 0, 0
  
     with torch.no_grad():
-        for b in range(nbatches):
+        #for b in range(nbatches):
+        for b in range(2):
         #should not happen unless files are broken (will give additional errors)
             #if dataloader.isEmpty():
              #   raise Exception("ran out of data") 
@@ -157,6 +164,7 @@ def val_loop(dataloader, nbatches, model, loss_fn, device, epoch):
             npf = torch.Tensor(features_list[2]).to(device)
             vtx = torch.Tensor(features_list[3]).to(device)
             cpf_4v = torch.Tensor(features_list[4]).to(device)
+            cpf_4v = cpf_4v[:,:,:4]
             npf_4v = torch.Tensor(features_list[5]).to(device)
             vtx_4v = torch.Tensor(features_list[6]).to(device)
             #pair = torch.Tensor(features_list[7]).to(device)
@@ -166,13 +174,21 @@ def val_loop(dataloader, nbatches, model, loss_fn, device, epoch):
             pred = model(inpt)
             # Compute prediction and loss
             _, labels = y.max(dim=1)
-            
-            test_loss += loss_fn(pred, y.long()).item()
+            #print(labels)
+            #print(y)
+            #total += cpf[0].shape[0] # this does not have the length of one batch, but rather the number of cpfs !
+            total += cpf.shape[0]
+            test_loss += loss_fn(pred, y.long()).item() # batch loss, added for every batch
+            avg_loss = test_loss / (b + 1)
             correct += (pred.argmax(1) == labels).type(torch.float).sum().item()
+            #print(correct)
+            #print(total)
  
-    test_loss /= num_batches
-    correct /= (num_batches * cpf[0].shape[0])
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.6f}%, Avg loss: {test_loss:>6f} \n")
+    #test_loss /= num_batches # will be total loss over all batches, divided by number of batches
+    #correct /= (num_batches * cpf[0].shape[0])
+    correct /= total # this is dividing by the total length of validation set, also works for the edge case of the last batch
+    #print(f"Test Error: \n Accuracy: {(100*correct):>0.6f}%, Avg loss: {test_loss:>6f} \n")
+    print(f"Test Error: \n Accuracy: {(100*correct):>0.6f}%, Avg loss: {avg_loss:>6f} \n")
     return test_loss
 
 def cross_entropy_one_hot(input, target):
@@ -355,6 +371,8 @@ class training_base(object):
                 'cpf' : torch.Tensor(np.load(epsilons_per_feature['cpf']).transpose()).to(self.device),
                 'npf' : torch.Tensor(np.load(epsilons_per_feature['npf']).transpose()).to(self.device),
                 'vtx' : torch.Tensor(np.load(epsilons_per_feature['vtx']).transpose()).to(self.device),
+                #'cpf_pts' : torch.cat((torch.Tensor(np.load(epsilons_per_feature['cpf_pts']).transpose()).to(self.device)
+                #                     torch.zeros(6, device=self.device))), # more features not currently covered with attacks
                 'cpf_pts' : torch.Tensor(np.load(epsilons_per_feature['cpf_pts']).transpose()).to(self.device),
                 'npf_pts' : torch.Tensor(np.load(epsilons_per_feature['npf_pts']).transpose()).to(self.device),
                 'vtx_pts' : torch.Tensor(np.load(epsilons_per_feature['vtx_pts']).transpose()).to(self.device),
@@ -398,5 +416,6 @@ class training_base(object):
 
                     
                     self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = False)
-                
-                traingen.shuffleFileList() # Note: DJC3 shuffleFileList, older: shuffleFilelist
+                    print(self.trainedepoches, nepochs)
+                    if self.trainedepoches + 1 < nepochs: # avoiding the NoneType error at the end of training
+                        traingen.shuffleFileList() # Note: DJC3 shuffleFileList, older: shuffleFilelist

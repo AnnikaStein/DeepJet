@@ -13,7 +13,7 @@ vars_per_candidate = {
     'cpf' : 17,
     'npf' : 8,
     'vtx' : 14,
-    'cpf_pts' : 4,
+    'cpf_pts' : 4, #10,
     'npf_pts' : 4,
     'vtx_pts' : 4,
     #'pxl' : ,
@@ -43,9 +43,9 @@ defaults_per_variable = {
     'cpf' : [0 for i in range(vars_per_candidate['cpf'])],
     'npf' : [0 for i in range(vars_per_candidate['npf'])],
     'vtx' : [0 for i in range(vars_per_candidate['vtx'])],
-    'cpf_pts' : [0 for i in range(vars_per_candidate['cpf'])],
-    'npf_pts' : [0 for i in range(vars_per_candidate['npf'])],
-    'vtx_pts' : [0 for i in range(vars_per_candidate['vtx'])],
+    'cpf_pts' : [0 for i in range(vars_per_candidate['cpf_pts'])],
+    'npf_pts' : [0 for i in range(vars_per_candidate['npf_pts'])],
+    'vtx_pts' : [0 for i in range(vars_per_candidate['vtx_pts'])],
     #'pxl' : ,
 }
 integer_variables_by_candidate = {

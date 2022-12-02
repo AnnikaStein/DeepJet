@@ -256,24 +256,27 @@ class PairEmbed(nn.Module):
 
     def forward(self, x):
         # x: (batch, v_dim, seq_len)
-        with torch.no_grad():
-            batch_size, _, seq_len = x.size()
-            if not self.for_onnx:
-                i, j = torch.tril_indices(seq_len, seq_len, offset = -1, device=x.device)
-                x = x.unsqueeze(-1).repeat(1, 1, 1, seq_len)
-                xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
-                xj = x[:, :, j, i]
-                #k = (i != j)*1
-                x = self.pairwise_lv_fts(xi, xj)
-            else:
-                i, j = tril_indices(x, seq_len, offset = True)
-                x = x.unsqueeze(-1).repeat(1, 1, 1, seq_len)
-                xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
-                xj = x[:, :, j, i]
-                #k = (i != j)*1
-                x = self.pairwise_lv_fts(xi, xj)
-                #x = self.pairwise_lv_fts(x.unsqueeze(-1), x.unsqueeze(-2)).view(batch_size, -1, seq_len * seq_len)
-
+        
+        # allow gradient computation for adversarial training here ?!
+#        with torch.no_grad():
+# START indentation if doing nominal training
+        batch_size, _, seq_len = x.size()
+        if not self.for_onnx:
+            i, j = torch.tril_indices(seq_len, seq_len, offset = -1, device=x.device)
+            x = x.unsqueeze(-1).repeat(1, 1, 1, seq_len)
+            xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
+            xj = x[:, :, j, i]
+            #k = (i != j)*1
+            x = self.pairwise_lv_fts(xi, xj)
+        else:
+            i, j = tril_indices(x, seq_len, offset = True)
+            x = x.unsqueeze(-1).repeat(1, 1, 1, seq_len)
+            xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
+            xj = x[:, :, j, i]
+            #k = (i != j)*1
+            x = self.pairwise_lv_fts(xi, xj)
+            #x = self.pairwise_lv_fts(x.unsqueeze(-1), x.unsqueeze(-2)).view(batch_size, -1, seq_len * seq_len)
+# END indentation if doing nominal training
         elements = self.embed(x)  # (batch, embed_dim, num_elements
         
         if not self.for_onnx:
