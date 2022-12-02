@@ -30,13 +30,13 @@ from definitions_ParT import epsilons_per_feature, vars_per_candidate
 glob_vars = vars_per_candidate['glob']
 
 def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, epoch_pbar, acc_loss, scaler, scheduler, attack, att_magnitude, restrict_impact, epsilon_factors):
-    #for b in range(nbatches):
-    for b in range(2):
+    print('Type of train_loop [Nominal(None)|Adversarial()]:', attack)
+    for b in range(nbatches):
         
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         #should not happen unless files are broken (will give additional errors)
         #if dataloader.isEmpty():
-         #   raise Exception("ran out of data") 
+        #    raise Exception("ran out of data") 
             
         features_list, truth_list = next(dataloader)
 
@@ -151,11 +151,10 @@ def val_loop(dataloader, nbatches, model, loss_fn, device, epoch):
     test_loss, correct, total = 0, 0, 0
  
     with torch.no_grad():
-        #for b in range(nbatches):
-        for b in range(2):
+        for b in range(nbatches):
         #should not happen unless files are broken (will give additional errors)
             #if dataloader.isEmpty():
-             #   raise Exception("ran out of data") 
+            #    raise Exception("ran out of data") 
 
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
             features_list, truth_list = next(dataloader)
@@ -332,7 +331,7 @@ class training_base(object):
         self.val_data.setBatchSize(batchsize)
         
     def trainModel(self, nepochs, batchsize, batchsize_use_sum_of_squares = False, extend_truth_list_by=0,
-                   load_in_mem = False, max_files = -1, plot_batch_loss = False, attack = None, att_magnitude = 0., restrict_impact = -1, **trainargs):
+                   load_in_mem = False, max_files = -1, plot_batch_loss = False, attack = None, att_magnitude = 0., restrict_impact = -1, start_attack_after = 0, **trainargs):
         
         self._initTraining(batchsize, batchsize_use_sum_of_squares)
         print('starting training')
@@ -379,7 +378,10 @@ class training_base(object):
             }
             
             while(self.trainedepoches < nepochs):
-           
+                if self.trainedepoches < start_attack_after:
+                    dynamic_attack = None
+                else:
+                    dynamic_attack = attack
                 #this can change from epoch to epoch
                 #calculate steps for this epoch
                 #feed info below
@@ -402,7 +404,7 @@ class training_base(object):
                     self.model.train()
                     for param_group in self.optimizer.param_groups:
                         print('/n Learning rate = '+str(param_group['lr'])+' /n')
-                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, acc_loss=0, scaler = self.scaler, scheduler = self.scheduler, attack = attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact, epsilon_factors = epsilon_factors)
+                    train_loss = train_loop(train_generator, nbatches_train, self.model, self.criterion, self.optimizer, self.device, self.trainedepoches, epoch_pbar, acc_loss=0, scaler = self.scaler, scheduler = self.scheduler, attack = dynamic_attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact, epsilon_factors = epsilon_factors)
                     self.scheduler.step()
                 
                     self.model.eval()
@@ -417,5 +419,6 @@ class training_base(object):
                     
                     self.saveModel(self.model, self.optimizer, self.trainedepoches, self.scheduler, self.best_loss, train_loss, val_loss, is_best = False)
                     print(self.trainedepoches, nepochs)
-                    if self.trainedepoches + 1 < nepochs: # avoiding the NoneType error at the end of training
+                    if self.trainedepoches < nepochs:
+                        print('Shuffeling...')
                         traingen.shuffleFileList() # Note: DJC3 shuffleFileList, older: shuffleFilelist

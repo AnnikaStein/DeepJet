@@ -49,9 +49,11 @@ train.train_data.maxFilesOpen=1
 attack = 'FGSM'
 att_magnitude = 0.01
 restrict_impact = -1
+start_attack_after = 10
 
 model,history = train.trainModel(nepochs=num_epochs, 
                                  batchsize=512,
-                                 attack = 'FGSM',
-                                 att_magnitude = 0.01,
-                                 restrict_impact = -1)
+                                 attack = attack,
+                                 att_magnitude = att_magnitude,
+                                 restrict_impact = restrict_impact,
+                                 start_attack_after = start_attack_after)
