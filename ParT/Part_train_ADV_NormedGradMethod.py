@@ -46,10 +46,10 @@ train=training_base(model = model, criterion = criterion, optimizer = optimizer,
 
 train.train_data.maxFilesOpen=1
 
-attack = 'FGSM'
+attack = 'NGM'
 att_magnitude = 0.01
 restrict_impact = -1
-start_attack_after = 10
+start_attack_after = 3
 do_micro_tests_only = True
 
 model,history = train.trainModel(nepochs=num_epochs, 

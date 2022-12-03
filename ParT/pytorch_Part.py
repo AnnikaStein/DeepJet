@@ -102,17 +102,18 @@ def train_loop(dataloader, nbatches, model, loss_fn, optimizer, device, epoch, e
                                restrict_impact=restrict_impact,
                                var_group='vtx_pts')
 
-        elif attack == 'FGSM':
+        elif attack == 'FGSM' or attack == 'NGM':
             #print('Do FGSM')
             with torch.cuda.amp.autocast():
-                glob, cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = fgsm_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
+                glob, cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = first_order_attack(sample=(glob,cpf,npf,vtx,cpf_4v,npf_4v,vtx_4v), 
                                                                           epsilon=att_magnitude,
                                                                           dev=device,
                                                                           targets=y,
                                                                           thismodel=model,
                                                                           thiscriterion=loss_fn,
                                                                           restrict_impact=restrict_impact,
-                                                                          epsilon_factors=epsilon_factors)
+                                                                          epsilon_factors=epsilon_factors,
+                                                                          do_sign_or_normed_grad = attack)
             
         # Compute prediction and loss
         inpt = (cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v)
@@ -188,7 +189,7 @@ def val_loop(dataloader, nbatches, model, loss_fn, device, epoch):
     correct /= total # this is dividing by the total length of validation set, also works for the edge case of the last batch
     #print(f"Test Error: \n Accuracy: {(100*correct):>0.6f}%, Avg loss: {test_loss:>6f} \n")
     print(f"Test Error: \n Accuracy: {(100*correct):>0.6f}%, Avg loss: {avg_loss:>6f} \n")
-    return test_loss
+    return avg_loss
 
 def cross_entropy_one_hot(input, target):
     _, labels = target.max(dim=1)
@@ -331,7 +332,7 @@ class training_base(object):
         self.val_data.setBatchSize(batchsize)
         
     def trainModel(self, nepochs, batchsize, batchsize_use_sum_of_squares = False, extend_truth_list_by=0,
-                   load_in_mem = False, max_files = -1, plot_batch_loss = False, attack = None, att_magnitude = 0., restrict_impact = -1, start_attack_after = 0, **trainargs):
+                   load_in_mem = False, max_files = -1, plot_batch_loss = False, attack = None, att_magnitude = 0., restrict_impact = -1, start_attack_after = 0, do_micro_tests_only = False, **trainargs):
         
         self._initTraining(batchsize, batchsize_use_sum_of_squares)
         print('starting training')
@@ -388,8 +389,12 @@ class training_base(object):
                 traingen.prepareNextEpoch()
                 valgen.prepareNextEpoch()
 
-                nbatches_train = traingen.getNBatches() #might have changed due to shuffeling
-                nbatches_val = valgen.getNBatches()
+                if do_micro_tests_only:
+                    nbatches_train = 4
+                    nbatches_val = 4
+                else:
+                    nbatches_train = traingen.getNBatches() #might have changed due to shuffeling
+                    nbatches_val = valgen.getNBatches()
                 
                 train_generator=traingen.feedNumpyData()
                 val_generator=valgen.feedNumpyData()

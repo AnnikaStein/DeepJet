@@ -1,6 +1,7 @@
 from definitions_ParT import *
 import torch
 import numpy as np
+from helpers_advertorch import *
 
 def apply_noise(sample, magn=1e-2,offset=[0], dev=torch.device("cpu"), restrict_impact=-1, var_group='glob'):
     if magn == 0:
@@ -53,7 +54,7 @@ def apply_noise(sample, magn=1e-2,offset=[0], dev=torch.device("cpu"), restrict_
 
         return xadv
 
-def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriterion=None,reduced=True, dev=torch.device("cpu"), restrict_impact=-1, epsilon_factors=None):
+def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriterion=None,reduced=True, dev=torch.device("cpu"), restrict_impact=-1, epsilon_factors=None, do_sign_or_normed_grad = 'FGSM'):
     if epsilon == 0:
         return sample
 
@@ -73,7 +74,6 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
     xadv_cpf_pts.requires_grad = True
     xadv_npf_pts.requires_grad = True
     xadv_vtx_pts.requires_grad = True
-    #print(xadv_cpf_pts.size()) # bsize, n_cpf_pts, n_cpf_pts_features turned out that there are 10 instead of 4 features
 
     #new_inpts = (xadv_glob,
     #             xadv_cpf,xadv_npf,xadv_vtx,
@@ -89,14 +89,30 @@ def fgsm_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,thiscriteri
     loss.backward()
 
     with torch.no_grad():
-        #dx_glob = torch.sign(xadv_glob.grad.detach())
-        dx_cpf = torch.sign(xadv_cpf.grad.detach())
-        dx_npf = torch.sign(xadv_npf.grad.detach())
-        dx_vtx = torch.sign(xadv_vtx.grad.detach())
-        dx_cpf_pts = torch.sign(xadv_cpf_pts.grad.detach())
-        dx_npf_pts = torch.sign(xadv_npf_pts.grad.detach())
-        dx_vtx_pts = torch.sign(xadv_vtx_pts.grad.detach())
-        #print(dx_cpf_pts.size())
+        if do_sign_or_normed_grad == 'FGSM':
+            #dx_glob = torch.sign(xadv_glob.grad.detach())
+            dx_cpf = torch.sign(xadv_cpf.grad.detach())
+            dx_npf = torch.sign(xadv_npf.grad.detach())
+            dx_vtx = torch.sign(xadv_vtx.grad.detach())
+            dx_cpf_pts = torch.sign(xadv_cpf_pts.grad.detach())
+            dx_npf_pts = torch.sign(xadv_npf_pts.grad.detach())
+            dx_vtx_pts = torch.sign(xadv_vtx_pts.grad.detach())
+            #print(dx_cpf_pts.size())
+        
+        elif do_sign_or_normed_grad == 'NGM':
+            dx_cpf = normalize_by_pnorm(xadv_cpf.grad.detach())
+            dx_npf = normalize_by_pnorm(xadv_npf.grad.detach())
+            dx_vtx = normalize_by_pnorm(xadv_vtx.grad.detach())
+            dx_cpf_pts = normalize_by_pnorm(xadv_cpf_pts.grad.detach())
+            dx_npf_pts = normalize_by_pnorm(xadv_npf_pts.grad.detach())
+            dx_vtx_pts = normalize_by_pnorm(xadv_vtx_pts.grad.detach())
+            
+        print(dx_cpf)
+        print(dx_npf)
+        print(dx_vtx)
+        print(dx_cpf_pts)
+        print(dx_npf_pts)
+        print(dx_vtx_pts)
 
         #xadv_glob += epsilon * epsilon_factors['glob'] * dx_glob
         xadv_cpf += epsilon * epsilon_factors['cpf'] * dx_cpf
