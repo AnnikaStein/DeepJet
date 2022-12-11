@@ -106,7 +106,7 @@ def test_loop(dataloader, model, nbatches, pbar, attack = "", att_magnitude = -1
 
 
         # Compute prediction
-        pred = nn.Softmax(dim=1)(model(glob,cpf,npf,vtx)).cpu().detach().numpy()
+        pred = nn.Softmax(dim=1)(model(glob,cpf,npf,vtx)).detach().cpu().numpy()
         if b == 0:
             predictions = pred
         else:

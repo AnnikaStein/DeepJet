@@ -8,10 +8,15 @@ from ParT import ParticleTransformer
 #from ParT_old import DeepJetTransformer, ParticleTransformer
 from pytorch_ranger import *
 #from schedulers import *
+from focal_loss import FocalLoss, focal_loss
 
 def cross_entropy_one_hot(input, target):
     _, labels = target.max(dim=1)
     return nn.CrossEntropyLoss()(input, labels)
+
+def my_focal_loss(input, target, alpha=None, gamma=6.0):
+    _, labels = target.max(dim=1)
+    return FocalLoss(alpha, gamma, reduction='none')(input, labels)
 
 num_epochs = 30
 
@@ -36,7 +41,8 @@ model.to(device)
 #model = nn.DataParallel(model)
 scaler = torch.cuda.amp.GradScaler()
 
-criterion = cross_entropy_one_hot
+criterion = my_focal_loss
+#criterion = cross_entropy_one_hot
 optimizer = Ranger(model.parameters(), lr = 1e-3)
 #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = [1], gamma = 0.1)
 scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = mil, gamma = lr_rate)
@@ -46,11 +52,11 @@ train=training_base(model = model, criterion = criterion, optimizer = optimizer,
 
 train.train_data.maxFilesOpen=1
 
-attack = 'FGSM'
+attack = 'NGM'
 att_magnitude = 0.01
 restrict_impact = -1
 start_attack_after = 10
-do_micro_tests_only = True
+do_micro_tests_only = False
 
 model,history = train.trainModel(nepochs=num_epochs, 
                                  batchsize=512,

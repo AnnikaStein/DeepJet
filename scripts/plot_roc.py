@@ -20,12 +20,13 @@ print("finish import")
 #model_name = 'adversarial_with_etarel_phirel'
 #model_name = 'nominal'
 #model_name = 'adversarial_eps0p005'
-model_name = 'adversarial_eps0p01'
+#model_name = 'adversarial_eps0p01'
 #model_name = 'reduced_adversarial_eps0p005'
 #model_name = 'nominal_bsize10k'
 #model_name = 'nominal_bsize4k'
 #model_name = 'adversarial_eps0p01_bsize10k'
-prediction_setup = ''
+model_name = 'testADV3'
+prediction_setup = '_20'
 #prediction_files = 'one_prediction'
 prediction_files = 'outfiles'
 
@@ -60,7 +61,8 @@ else:
     
 
 #dirz = f'/eos/user/a/anstein/DeepJet/Train_DF/{model_name}/predict{prediction_setup}/'
-dirz = f'/eos/user/a/anstein/public/DeepJet/Train_DF_Run2/{model_name}/predict{prediction_setup}/'
+#dirz = f'/eos/user/a/anstein/public/DeepJet/Train_DF_Run2/{model_name}/predict{prediction_setup}/'
+dirz = f'/eos/user/a/anstein/ParT/{model_name}/predict{prediction_setup}/'
 truthfile = open( dirz+prediction_files+'.txt','r')
 
 config_name = model_name + prediction_setup + '_' + prediction_files
