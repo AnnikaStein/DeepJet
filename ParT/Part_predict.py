@@ -11,7 +11,7 @@ parser.add_argument("-b", help="batch size, overrides the batch size from the tr
 parser.add_argument("--gpu",  help="select specific GPU", metavar="OPT", default="")
 parser.add_argument("--unbuffered", help="do not read input in memory buffered mode (for lower memory consumption on fast disks)", default=False, action="store_true")
 parser.add_argument("--pad_rowsplits", help="pad the row splits if the input is ragged", default=False, action="store_true")
-parser.add_argument("-attack", help="use adversarial attack (Noise|FGSM) or leave blank to use undisturbed features only", default="")
+parser.add_argument("-attack", help="use adversarial attack (Noise|FGSM|NGM) or leave blank to use undisturbed features only", default="")
 parser.add_argument("-att_magnitude", help="distort input features with adversarial attack, using specified magnitude of attack", default="-1")
 parser.add_argument("-restrict_impact", help="limit attack impact to this fraction of the input value (percent-cap on distortion)", default="-1")
 
@@ -271,15 +271,16 @@ for inputfile in inputdatafiles:
                         'vtx_pts' : torch.Tensor(np.load(epsilons_per_feature['vtx_pts']).transpose()).to(device),
                     }
 
-        defaults_device = {
-            'glob' : torch.Tensor(defaults_per_variable['glob']).to(device),
-            'cpf' : torch.Tensor(defaults_per_variable['cpf']).to(device),
-            'npf' : torch.Tensor(defaults_per_variable['npf']).to(device),
-            'vtx' : torch.Tensor(defaults_per_variable['vtx']).to(device),
-            'cpf_pts' : torch.Tensor(defaults_per_variable['cpf_pts']).to(device),
-            'npf_pts' : torch.Tensor(defaults_per_variable['npf_pts']).to(device),
-            'vtx_pts' : torch.Tensor(defaults_per_variable['vtx_pts']).to(device),
-        }
+        # defaults_device = {
+        #     'glob' : torch.Tensor(defaults_per_variable['glob']).to(device),
+        #     'cpf' : torch.Tensor(defaults_per_variable['cpf']).to(device),
+        #     'npf' : torch.Tensor(defaults_per_variable['npf']).to(device),
+        #     'vtx' : torch.Tensor(defaults_per_variable['vtx']).to(device),
+        #     'cpf_pts' : torch.Tensor(defaults_per_variable['cpf_pts']).to(device),
+        #     'npf_pts' : torch.Tensor(defaults_per_variable['npf_pts']).to(device),
+        #     'vtx_pts' : torch.Tensor(defaults_per_variable['vtx_pts']).to(device),
+        # }
+        defaults_device = defaults_per_variable
         predicted, NPYcpf, NPYnpf, NPYvtx, NPYcpf_4v, NPYnpf_4v, NPYvtx_4v = test_loop(gen.feedNumpyData(), model, nbatches = nbatches, pbar = pbar, attack = attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact, epsilon_factors = epsilon_factors, defaults_device = defaults_device)
         att_str = '_' + attack
         
@@ -312,6 +313,10 @@ for inputfile in inputdatafiles:
     if not type(predicted) == list: #circumvent that keras return only an array if there is just one list item
         predicted = [predicted]   
     overwrite_outname = td.writeOutPrediction(predicted, x, y, w, args.outputDir + "/" + outfilename, use_inputdir+"/"+inputfile)
+    del x
+    del y
+    del w
+    gc.collect()
     if overwrite_outname is not None:
         outfilename = overwrite_outname
     outputs.append(outfilename)

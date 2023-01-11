@@ -386,15 +386,17 @@ class training_base(object):
                     'vtx_pts' : torch.Tensor(np.load(epsilons_per_feature['vtx_pts']).transpose()).to(self.device),
                 }
 
-                defaults_device = {
-                    #'glob' : torch.Tensor(defaults_per_variable['glob']).to(self.device),
-                    'cpf' : torch.Tensor(defaults_per_variable['cpf']).to(self.device),
-                    'npf' : torch.Tensor(defaults_per_variable['npf']).to(self.device),
-                    'vtx' : torch.Tensor(defaults_per_variable['vtx']).to(self.device),
-                    'cpf_pts' : torch.Tensor(defaults_per_variable['cpf_pts']).to(self.device),
-                    'npf_pts' : torch.Tensor(defaults_per_variable['npf_pts']).to(self.device),
-                    'vtx_pts' : torch.Tensor(defaults_per_variable['vtx_pts']).to(self.device),
-                }
+                #defaults_device = {
+                #    #'glob' : torch.Tensor(defaults_per_variable['glob']).to(self.device),
+                #    'cpf' : torch.Tensor(defaults_per_variable['cpf']).to(self.device),
+                #    'npf' : torch.Tensor(defaults_per_variable['npf']).to(self.device),
+                #    'vtx' : torch.Tensor(defaults_per_variable['vtx']).to(self.device),
+                #    'cpf_pts' : torch.Tensor(defaults_per_variable['cpf_pts']).to(self.device),
+                #    'npf_pts' : torch.Tensor(defaults_per_variable['npf_pts']).to(self.device),
+                #    'vtx_pts' : torch.Tensor(defaults_per_variable['vtx_pts']).to(self.device),
+                #}
+                
+                defaults_device = defaults_per_variable
             else:
                 epsilon_factors = None
                 defaults_device = None

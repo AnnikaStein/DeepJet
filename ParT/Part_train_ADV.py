@@ -18,7 +18,7 @@ def my_focal_loss(input, target, alpha=None, gamma=6.0):
     _, labels = target.max(dim=1)
     return FocalLoss(alpha, gamma, reduction='none')(input, labels)
 
-num_epochs = 30
+num_epochs = 40
 
 lr_epochs = max(1, int(num_epochs * 0.3))
 lr_rate = 0.01 ** (1.0 / lr_epochs)
@@ -41,8 +41,8 @@ model.to(device)
 #model = nn.DataParallel(model)
 scaler = torch.cuda.amp.GradScaler()
 
-criterion = my_focal_loss
-#criterion = cross_entropy_one_hot
+#criterion = my_focal_loss
+criterion = cross_entropy_one_hot
 optimizer = Ranger(model.parameters(), lr = 1e-3)
 #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = [1], gamma = 0.1)
 scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones = mil, gamma = lr_rate)
@@ -55,7 +55,7 @@ train.train_data.maxFilesOpen=1
 attack = 'NGM'
 att_magnitude = 0.01
 restrict_impact = -1
-start_attack_after = 10
+start_attack_after = 0
 do_micro_tests_only = False
 
 model,history = train.trainModel(nepochs=num_epochs, 

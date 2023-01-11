@@ -155,7 +155,11 @@ def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,this
                         xadv_cpf[:,j,i] = cpf[:,j,i]
                     else:
                         #defaults_cpf = cpf[:,j,i] == defaults_per_variable['cpf'][i]
-                        defaults_cpf = torch.eq(cpf[:,j,i], defaults_per_variable['cpf'][i])
+                        defaults_cpf = torch.zeros_like(cpf[:,j,i], dtype=torch.bool)
+                        for di in defaults_per_variable['cpf'][i]:
+                            defaults_cpf += torch.eq(cpf[:,j,i], di)
+                            
+                        #defaults_cpf = torch.eq(cpf[:,j,i], defaults_per_variable['cpf'][i])
                         #if torch.sum(defaults_cpf) != 0:
                         #    xadv_cpf[:,j,i][defaults_cpf] = cpf[:,j,i][defaults_cpf]
                             
@@ -174,7 +178,15 @@ def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,this
                     if i in integer_variables_by_candidate['npf']:
                         xadv_npf[:,j,i] = npf[:,j,i]
                     else:
-                        defaults_npf = npf[:,j,i] == defaults_per_variable['npf'][i]
+                        
+                        defaults_npf = torch.zeros_like(npf[:,j,i], dtype=torch.bool)
+                        for di in defaults_per_variable['npf'][i]:
+                            defaults_npf += torch.eq(npf[:,j,i], di)
+                            
+                        #defaults_npf = torch.eq(npf[:,j,i], defaults_per_variable['npf'][i])
+                        
+                        
+                        #defaults_npf = npf[:,j,i] == defaults_per_variable['npf'][i]
                         #if torch.sum(defaults_npf) != 0:
                         #    xadv_npf[:,j,i][defaults_npf] = npf[:,j,i][defaults_npf]
                             
@@ -193,7 +205,13 @@ def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,this
                     if i in integer_variables_by_candidate['vtx']:
                         xadv_vtx[:,j,i] = vtx[:,j,i]
                     else:
-                        defaults_vtx = vtx[:,j,i] == defaults_per_variable['vtx'][i]
+                        defaults_vtx = torch.zeros_like(vtx[:,j,i], dtype=torch.bool)
+                        for di in defaults_per_variable['vtx'][i]:
+                            defaults_vtx += torch.eq(vtx[:,j,i], di)
+                            
+                        #defaults_vtx = torch.eq(vtx[:,j,i], defaults_per_variable['vtx'][i])
+                        
+                        #defaults_vtx = vtx[:,j,i] == defaults_per_variable['vtx'][i]
                         #if torch.sum(defaults_vtx) != 0:
                         #    xadv_vtx[:,j,i][defaults_vtx] = vtx[:,j,i][defaults_vtx]
                             
@@ -213,7 +231,12 @@ def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,this
                     #if i in integer_variables_by_candidate['cpf_pts']:
                     #    xadv_cpf_pts[:,j,i] = cpf_pts[:,j,i]
                     #else:
-                    defaults_cpf_pts = cpf_pts[:,j,i] == defaults_per_variable['cpf_pts'][i]
+                    
+                    defaults_cpf_pts = torch.zeros_like(cpf_pts[:,j,i], dtype=torch.bool)
+                    for di in defaults_per_variable['cpf_pts'][i]:
+                        defaults_cpf_pts += torch.eq(cpf_pts[:,j,i], di)
+                    
+                    #defaults_cpf_pts = cpf_pts[:,j,i] == defaults_per_variable['cpf_pts'][i]
                     #if torch.sum(defaults_cpf_pts) != 0:
                     #    xadv_cpf_pts[:,j,i][defaults_cpf_pts] = cpf_pts[:,j,i][defaults_cpf_pts]
                             
@@ -232,7 +255,12 @@ def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,this
                     #if i in integer_variables_by_candidate['npf_pts']:
                     #    xadv_npf_pts[:,j,i] = npf_pts[:,j,i]
                     #else:
-                    defaults_npf_pts = npf_pts[:,j,i] == defaults_per_variable['npf_pts'][i]
+                    
+                    defaults_npf_pts = torch.zeros_like(npf_pts[:,j,i], dtype=torch.bool)
+                    for di in defaults_per_variable['npf_pts'][i]:
+                        defaults_npf_pts += torch.eq(npf_pts[:,j,i], di)
+                    
+                    #defaults_npf_pts = npf_pts[:,j,i] == defaults_per_variable['npf_pts'][i]
                     #if torch.sum(defaults_npf_pts) != 0:
                     #    xadv_npf_pts[:,j,i][defaults_npf_pts] = npf_pts[:,j,i][defaults_npf_pts]
                     
@@ -251,7 +279,12 @@ def first_order_attack(epsilon=1e-2,sample=None,targets=None,thismodel=None,this
                     #if i in integer_variables_by_candidate['vtx_pts']:
                     #    xadv_vtx_pts[:,j,i] = vtx_pts[:,j,i]
                     #else:
-                    defaults_vtx_pts = vtx_pts[:,j,i] == defaults_per_variable['vtx_pts'][i]
+                    
+                    defaults_vtx_pts = torch.zeros_like(vtx_pts[:,j,i], dtype=torch.bool)
+                    for di in defaults_per_variable['vtx_pts'][i]:
+                        defaults_vtx_pts += torch.eq(vtx_pts[:,j,i], di)
+                    
+                    #defaults_vtx_pts = vtx_pts[:,j,i] == defaults_per_variable['vtx_pts'][i]
                     #if torch.sum(defaults_vtx_pts) != 0:
                     #    xadv_vtx_pts[:,j,i][defaults_vtx_pts] = vtx_pts[:,j,i][defaults_vtx_pts]
                     

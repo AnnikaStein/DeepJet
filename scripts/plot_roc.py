@@ -25,8 +25,8 @@ print("finish import")
 #model_name = 'nominal_bsize10k'
 #model_name = 'nominal_bsize4k'
 #model_name = 'adversarial_eps0p01_bsize10k'
-model_name = 'testADV3'
-prediction_setup = '_20'
+model_name = 'NOM_FLgamma2'
+prediction_setup = '_ttbar_best_FGSM_NEW'
 #prediction_files = 'one_prediction'
 prediction_files = 'outfiles'
 
@@ -102,13 +102,13 @@ if isDeepJet:
     b_out = df['prob_isB']+df['prob_isBB']+df['prob_isLeptB']
     c_out = df['prob_isC']
     light_out = df['prob_isUDS']+df['prob_isG']
-    bvsl = np.where((b_out + light_out)!=0,
+    bvsl = np.where((b_out + light_out)>=0,
                     (b_out)/(b_out + light_out),
                     -1)
-    cvsb = np.where((b_out + c_out)!=0,
+    cvsb = np.where((b_out + c_out)>=0,
                     (c_out)/(b_out + c_out),
                     -1)
-    cvsl = np.where((light_out + c_out)!=0,
+    cvsl = np.where((light_out + c_out)>=0,
                     (c_out)/(light_out + c_out),
                     -1)
     summed_truth = df['isB']+df['isBB']+df['isLeptB']+df['isC']+df['isUDS']+df['isG']

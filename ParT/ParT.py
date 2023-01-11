@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from functools import partial
 import numpy as np
+from typing import List
 
 def node_distance(x):
     inner = -2 * torch.matmul(x.transpose(2, 1), x)
@@ -232,6 +233,9 @@ def tril_indices(x, seq_len, offset = True):
     
     return i, j
 
+def tril_indicesNEW(rows, cols, offset=0):
+    return torch.ones(rows, cols, dtype=torch.uint8).tril(offset).nonzero().t()
+
 
 class PairEmbed(nn.Module):
     def __init__(self, input_dim, dims, normalize_input=True, activation='gelu', eps=1e-8, for_onnx=False):
@@ -269,7 +273,8 @@ class PairEmbed(nn.Module):
             #k = (i != j)*1
             x = self.pairwise_lv_fts(xi, xj)
         else:
-            i, j = tril_indices(x, seq_len, offset = True)
+            i, j = tril_indices(x, seq_len, offset = True) # old
+            #i, j = tril_indices(seq_len, seq_len, offset = -1) # new
             x = x.unsqueeze(-1).repeat(1, 1, 1, seq_len)
             xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
             xj = x[:, :, j, i]
@@ -311,7 +316,7 @@ class InputConv(nn.Module):
         self.act = nn.GELU()
         self.dropout = nn.Dropout(dropout_rate)
 
-    def forward(self, x, sc, skip = True):
+    def forward(self, x, sc, skip: bool = True):
         
         x2 = self.dropout(self.bn1(self.act(self.lin(x))))
         if skip:
@@ -649,7 +654,9 @@ def _get_activation_fn(activation):
     raise RuntimeError("activation should be relu/gelu, not {}".format(activation))
 
 def build_E_p(tensor, is_cpf = False): #pt, eta, phi, e (, coords)
+    #a, b, _ = tensor.size()
     out = torch.zeros(tensor.shape[0], tensor.shape[1], 4, device = tensor.device)
+    #out = torch.zeros(a, b, 4, device = tensor.device)
     out[:,:,0] = tensor[:,:,0]*torch.cos(tensor[:,:,2]) #Get px
     out[:,:,1] = tensor[:,:,0]*torch.sin(tensor[:,:,2]) #Get py
     out[:,:,2] = tensor[:,:,0]*(0.5*(torch.exp(tensor[:,:,1]) - torch.exp(-tensor[:,:,1]))) #torch.sinh(tensor[:,:,1]) #Get pz
@@ -741,10 +748,13 @@ class ParticleTransformer(nn.Module):
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim), requires_grad=True)
         trunc_normal_(self.cls_token, std=.02)
 
-    def forward(self, inpt):
+    def forward(self, inpt, in2=None, in3=None, in4=None, in5=None, in6=None):
 
-        cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = inpt[0], inpt[1], inpt[2], inpt[3], inpt[4], inpt[5]
-
+        if in2 == None:
+            cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = inpt[0], inpt[1], inpt[2], inpt[3], inpt[4], inpt[5]
+        else:
+            cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = inpt, in2, in3, in4, in5, in6
+            
         padding_mask = torch.cat((cpf_4v[:,:,:1],npf_4v[:,:,:1],vtx_4v[:,:,:1]), dim = 1)
         padding_mask =torch.eq(padding_mask[:,:,0], 0.0)
 
@@ -770,5 +780,6 @@ class ParticleTransformer(nn.Module):
 
         if self.for_inference:
             output = torch.softmax(output, dim=1)
-        
+        #    return output[0], output[1], output[2], output[3], output[4], output[5]
+        #else:
         return output

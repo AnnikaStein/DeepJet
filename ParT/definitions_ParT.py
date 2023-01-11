@@ -28,7 +28,7 @@ defaults_per_variable_before_prepro = {
     'vtx_pts' : [0 for i in range(vars_per_candidate['vtx_pts'])],
     #'pxl' : ,
 }
-epsilons_per_feature = {
+epsilons_per_feature_ = {
     'glob' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/global_epsilons.npy',
     'cpf' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/cpf_epsilons.npy',
     'npf' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/npf_epsilons.npy',
@@ -38,7 +38,17 @@ epsilons_per_feature = {
     'vtx_pts' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/vtx_pts_epsilons.npy',
     #'pxl' : ,
 }
-defaults_per_variable = {
+epsilons_per_feature = {
+    'glob' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/global_standardized_epsilons.npy',
+    'cpf' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/cpf_standardized_epsilons.npy',
+    'npf' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/npf_standardized_epsilons.npy',
+    'vtx' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/vtx_standardized_epsilons.npy',
+    'cpf_pts' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/cpf_pts_standardized_epsilons.npy',
+    'npf_pts' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/npf_pts_standardized_epsilons.npy',
+    'vtx_pts' : '/eos/user/a/anstein/public/DeepJet/Train_ParT/auxiliary/vtx_pts_standardized_epsilons.npy',
+    #'pxl' : ,
+}
+defaults_per_variable_ = {
     'glob' : [0 for i in range(vars_per_candidate['glob'])],
     'cpf' : [0 for i in range(vars_per_candidate['cpf'])],
     'npf' : [0 for i in range(vars_per_candidate['npf'])],
@@ -46,6 +56,17 @@ defaults_per_variable = {
     'cpf_pts' : [0 for i in range(vars_per_candidate['cpf_pts'])],
     'npf_pts' : [0 for i in range(vars_per_candidate['npf_pts'])],
     'vtx_pts' : [0 for i in range(vars_per_candidate['vtx_pts'])],
+    #'pxl' : ,
+}
+defaults_per_variable = {
+    'glob' : [[None],[None],[None],[None],[None],[None],[-999,0],[-999],[-999],[-999,-1],[-999,-1],[-999,-1],[-999,-1],[None],[None]],
+#    'glob' : [[-999],[-999],[-999],[-999],[-999],[-999],[-999,0],[-999],[-999],[-999,-1],[-999,-1],[-999,-1],[-999,-1],[-999],[-999]],
+    'cpf' : [[0],[0],[0],[0],[0],[-1,0],[-1,0],[-1,0],[-1,0],[0],[0],[0],[0],[0],[0],[0],[0]],
+    'npf' : [[0,1,5],[0],[0],[0],[0],[0],[0],[0]],
+    'vtx' : [[0],[0],[0],[0],[0],[0],[0],[-1000,0],[0],[0],[0],[0],[0],[0]],
+    'cpf_pts' : [[0],[0],[0],[0]],
+    'npf_pts' : [[0],[0],[0],[0]],
+    'vtx_pts' : [[0],[0],[0],[0]],
     #'pxl' : ,
 }
 integer_variables_by_candidate = {
