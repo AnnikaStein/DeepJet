@@ -14,6 +14,7 @@ parser.add_argument("--pad_rowsplits", help="pad the row splits if the input is 
 parser.add_argument("-attack", help="use adversarial attack (Noise|FGSM|NGM) or leave blank to use undisturbed features only", default="")
 parser.add_argument("-att_magnitude", help="distort input features with adversarial attack, using specified magnitude of attack", default="-1")
 parser.add_argument("-restrict_impact", help="limit attack impact to this fraction of the input value (percent-cap on distortion)", default="-1")
+parser.add_argument("-save_inputs", help="besides predictions, save also all inputs (useful for attacked samples per model, once per dataset for raw as they would be all the same) [yes|no]", default="no")
 
 args = parser.parse_args()
 batchsize = int(args.b)
@@ -26,7 +27,7 @@ import numpy as np
 from DeepJetCore.DataCollection import DataCollection
 from DeepJetCore.dataPipeline import TrainDataGenerator
 import tempfile
-import atexit
+#import atexit
 import os
 import torch
 import torch.nn as nn
@@ -195,11 +196,21 @@ if args.model == 'ParticleTransformer':
                                 num_enc = 3,
                                 num_head = 8,
                                 embed_dim = 128,
-                                cpf_dim = 17,
+                                cpf_dim = 16,#17,
                                 npf_dim = 8,
                                 vtx_dim = 14,
                                 for_inference = False)
-    
+
+if args.model == 'ParticleTransformerOLD':
+    #model = ParticleTransformer(num_classes = 6, num_enc = 3, for_inference = False)
+    model = ParticleTransformer(num_classes = 6,
+                                num_enc = 3,
+                                num_head = 8,
+                                embed_dim = 128,
+                                cpf_dim = 17,
+                                npf_dim = 8,
+                                vtx_dim = 14,
+                                for_inference = False)   
 check = torch.load(args.inputModel, map_location=torch.device('cpu'))
 model.to(device)
 model.load_state_dict(check['state_dict'])
@@ -234,11 +245,15 @@ for inputfile in inputdatafiles:
         else:
             if inputdir[:4] == '/eos':
                 td.readFromFileBuffered(inputfile)
+            elif inputdir[:4] == '/afs':
+                td.readFromFileBuffered(inputfile)
             else:
                 td.readFromFileBuffered(use_inputdir+"/"+inputfile)
     else:
         print('converting '+inputfile)
         if inputfile[:4] == '/eos':
+            td.readFromSourceFile(inputfile, dc.weighterobjects, istraining=False)
+        if inputfile[:4] == '/afs':
             td.readFromSourceFile(inputfile, dc.weighterobjects, istraining=False)
         else:
             td.readFromSourceFile(use_inputdir+"/"+inputfile, dc.weighterobjects, istraining=False)
@@ -289,12 +304,13 @@ for inputfile in inputdatafiles:
         predicted, NPYcpf, NPYnpf, NPYvtx, NPYcpf_4v, NPYnpf_4v, NPYvtx_4v = test_loop(gen.feedNumpyData(), model, nbatches = nbatches, pbar = pbar, attack = attack, att_magnitude = att_magnitude, restrict_impact = restrict_impact, epsilon_factors = None, defaults_device = None)
         att_str = ''
         
-    np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYcpf{att_str}.npy', NPYcpf)
-    np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYnpf{att_str}.npy', NPYnpf)
-    np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYvtx{att_str}.npy', NPYvtx)
-    np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYcpf_4v{att_str}.npy', NPYcpf_4v)
-    np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYnpf_4v{att_str}.npy', NPYnpf_4v)
-    np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYvtx_4v{att_str}.npy', NPYvtx_4v)
+    if args.save_inputs == 'yes':
+        np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYcpf{att_str}.npy', NPYcpf)
+        np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYnpf{att_str}.npy', NPYnpf)
+        np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYvtx{att_str}.npy', NPYvtx)
+        np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYcpf_4v{att_str}.npy', NPYcpf_4v)
+        np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYnpf_4v{att_str}.npy', NPYnpf_4v)
+        np.save((args.outputDir + "/" + outfilename).strip('.root')+f'_NPYvtx_4v{att_str}.npy', NPYvtx_4v)
     del NPYcpf
     del NPYnpf
     del NPYvtx

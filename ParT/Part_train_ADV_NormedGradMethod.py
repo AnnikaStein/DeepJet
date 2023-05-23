@@ -18,7 +18,7 @@ def my_focal_loss(input, target, alpha=None, gamma=3.0):
     _, labels = target.max(dim=1)
     return FocalLoss(alpha, gamma, reduction='none')(input, labels)
 
-num_epochs = 4 # 30
+num_epochs = 30 #4 # 30
 
 lr_epochs = max(1, int(num_epochs * 0.3))
 lr_rate = 0.01 ** (1.0 / lr_epochs)
@@ -31,7 +31,7 @@ model = ParticleTransformer(num_classes = 6,
                             num_enc = 3,
                             num_head = 8,
                             embed_dim = 128,
-                            cpf_dim = 17,
+                            cpf_dim = 16,#17,
                             npf_dim = 8,
                             vtx_dim = 14,
                             for_inference = False)
@@ -57,7 +57,7 @@ attack = 'NGM'
 att_magnitude = 0.01
 restrict_impact = -1
 start_attack_after = 0
-do_micro_tests_only = True
+do_micro_tests_only = False
 
 model,history = train.trainModel(nepochs=num_epochs, 
                                  batchsize=512,

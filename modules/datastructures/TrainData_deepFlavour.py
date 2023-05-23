@@ -156,7 +156,7 @@ class TrainData_ParT(TrainData):
                              'Cpfcan_BtagPf_trackJetDistVal',
                              'Cpfcan_ptrel',
                              'Cpfcan_drminsv',
-                             'Cpfcan_distminsv',
+                            # 'Cpfcan_distminsv', ## don't use this for Run 3 2023 model !!!
                              'Cpfcan_VTX_ass',
                              'Cpfcan_puppiw',
                              'Cpfcan_chi2',

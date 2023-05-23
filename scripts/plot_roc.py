@@ -25,8 +25,13 @@ print("finish import")
 #model_name = 'nominal_bsize10k'
 #model_name = 'nominal_bsize4k'
 #model_name = 'adversarial_eps0p01_bsize10k'
-model_name = 'NOM_FLgamma2'
-prediction_setup = '_ttbar_best_FGSM_NEW'
+model_name = 'testNGMPUPPI'
+sampl = 'qcd'
+ptmin = 30 if sampl == 'ttbar' else 300 # NOTE: if ttbar, use pt > 30, if qcd, use pt > 300 below
+ptmax = 1000
+etamax = 2.5
+print(ptmin)
+prediction_setup = f'_{sampl}_17'
 #prediction_files = 'one_prediction'
 prediction_files = 'outfiles'
 
@@ -105,6 +110,9 @@ if isDeepJet:
     bvsl = np.where((b_out + light_out)>=0,
                     (b_out)/(b_out + light_out),
                     -1)
+    bvsc = np.where((b_out + c_out)>=0,
+                    (b_out)/(b_out + c_out),
+                    -1)
     cvsb = np.where((b_out + c_out)>=0,
                     (c_out)/(b_out + c_out),
                     -1)
@@ -113,26 +121,36 @@ if isDeepJet:
                     -1)
     summed_truth = df['isB']+df['isBB']+df['isLeptB']+df['isC']+df['isUDS']+df['isG']
     
-    veto_b = (df['isB'] != 1) & (df['isBB'] != 1) & (df['isLeptB'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
-    veto_c = (df['isC'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
-    veto_udsg = (df['isUDS'] != 1) & (df['isG'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
+    veto_b = (df['isB'] != 1) & (df['isBB'] != 1) & (df['isLeptB'] != 1) & (summed_truth != 0)
+    veto_c = (df['isC'] != 1) & (summed_truth != 0)
+    veto_udsg = (df['isUDS'] != 1) & (df['isG'] != 1) & (summed_truth != 0)
     
 else:
     b_jets = df['isB']+df['isBB']
     b_disc = df['prob_isB']+df['prob_isBB']
     summed_truth = df['isB']+df['isBB']+df['isC']+df['isUDSG']
-    veto_c = (df['isC'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
-    veto_udsg = (df['isUDSG'] != 1) & ( df['jet_pt'] > 30) & (summed_truth != 0)
+    veto_c = (df['isC'] != 1) & (summed_truth != 0)
+    veto_udsg = (df['isUDSG'] != 1) & (summed_truth != 0)
 
 
 #f = ROOT.TFile("ROCS_DeepJet_adversarial_FGSM_onefile.root", "recreate")
 
-x1, y1, auc1 = spit_out_roc(bvsl,b_jets,veto_c)
-x2, y2, auc2 = spit_out_roc(cvsb,c_jets,veto_udsg)
-x3, y3, auc3 = spit_out_roc(cvsl,c_jets,veto_b)
+x1, y1, auc1 = spit_out_roc(bvsl[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            b_jets[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            veto_c[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)])
+x2, y2, auc2 = spit_out_roc(cvsb[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            c_jets[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            veto_udsg[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)])
+x3, y3, auc3 = spit_out_roc(cvsl[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            c_jets[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            veto_b[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)])
+x4, y4, auc4 = spit_out_roc(bvsc[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            b_jets[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)],
+                            veto_udsg[( df['jet_pt'] > ptmin) & ( df['jet_pt'] < ptmax) & ( abs(df['jet_eta']) < etamax)])
 np.save(dirz + f'BvL_{prediction_files}_NEW.npy',np.array([x1,y1,auc1],dtype=object))
 np.save(dirz + f'CvB_{prediction_files}_NEW.npy',np.array([x2,y2,auc2],dtype=object))
 np.save(dirz + f'CvL_{prediction_files}_NEW.npy',np.array([x3,y3,auc3],dtype=object))
+np.save(dirz + f'BvC_{prediction_files}_NEW.npy',np.array([x4,y4,auc4],dtype=object))
 
 
 #gr1 = TGraph( 100, x1, y1 )

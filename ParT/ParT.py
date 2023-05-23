@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from functools import partial
 import numpy as np
-from typing import List
+from typing import List, Optional
 
 def node_distance(x):
     inner = -2 * torch.matmul(x.transpose(2, 1), x)
@@ -24,14 +24,14 @@ def delta_r2(eta1, phi1, eta2, phi2):
     return (eta1 - eta2)**2 + delta_phi(phi1, phi2)**2
 
 
-def to_pt2(x, eps=1e-8):
+def to_pt2(x, eps: Optional[float]=1e-8):
     pt2 = x[:, :2].square().sum(dim=1, keepdim=True)
     if eps is not None:
         pt2 = pt2.clamp(min=eps)
     return pt2
 
 
-def to_m2(x, eps=1e-8):
+def to_m2(x, eps: Optional[float]=1e-8):
     m2 = x[:, 3:4].square() - x[:, :3].square().sum(dim=1, keepdim=True)
     if eps is not None:
         m2 = m2.clamp(min=eps)
@@ -46,13 +46,14 @@ def atan2(y, x):
     return atan_part + pi_part
 
 
-def to_ptrapphim(x, return_mass=True, eps=1e-8, for_onnx=False):
+def to_ptrapphim(x, return_mass: bool=True, eps: Optional[float]=1e-8, for_onnx: bool=False):
     # x: (N, 4, ...), dim1 : (px, py, pz, E)
     px, py, pz, energy = x[:,:4,:].split((1, 1, 1, 1), dim=1)
     pt = torch.sqrt(to_pt2(x, eps=eps))
     rapidity = pz #0.5 * torch.log(((energy + pz) / (energy - pz)) + 0.0001)
     #rapidity = 0.5 * torch.log(1 + (2 * pz) / (energy - pz).clamp(min=1e-20))
-    phi = (atan2 if for_onnx else torch.atan2)(py, px)
+    #phi = (atan2 if for_onnx else torch.atan2)(py, px)
+    phi = atan2(py, px) if for_onnx else torch.atan2(py, px)
 
     if not return_mass:
         return torch.cat((pt, rapidity, phi), dim=1)
@@ -61,7 +62,7 @@ def to_ptrapphim(x, return_mass=True, eps=1e-8, for_onnx=False):
         return torch.cat((pt, rapidity, phi, m), dim=1)
 
 
-def boost(x, boostp4, eps=1e-8):
+def boost(x, boostp4, eps: float=1e-8):
     # boost x to the rest frame of boostp4
     # x: (N, 4, ...), dim1 : (px, py, pz, E)
     p3 = -boostp4[:, :3] / boostp4[:, 3:].clamp(min=eps)
@@ -78,7 +79,7 @@ def p3_norm(p, eps=1e-8):
     return p[:, :3] / p[:, :3].norm(dim=1, keepdim=True).clamp(min=eps)
 
 
-def pairwise_lv_fts(xi, xj, num_outputs=4, eps=1e-8, for_onnx=False):
+def pairwise_lv_fts(xi, xj, num_outputs: int=4, eps: float=1e-8, for_onnx: bool=False):
     pti, rapi, phii = to_ptrapphim(xi, False, eps=None, for_onnx=for_onnx).split((1, 1, 1), dim=1)
     ptj, rapj, phij = to_ptrapphim(xj, False, eps=None, for_onnx=for_onnx).split((1, 1, 1), dim=1)
     
@@ -88,6 +89,8 @@ def pairwise_lv_fts(xi, xj, num_outputs=4, eps=1e-8, for_onnx=False):
 
     #print(xi.shape)
     #print(xj.shape)
+    
+    outputs: List[Tensor] = []
 
     delta = delta_r2(rapi, phii, rapj, phij).sqrt()
     lndelta = torch.log(delta.clamp(min=eps)+1)
@@ -120,17 +123,17 @@ def pairwise_lv_fts(xi, xj, num_outputs=4, eps=1e-8, for_onnx=False):
     #    pv_dist = torch.norm(delta2_pv_ij, dim=1)
      #   outputs += [sv_dist.unsqueeze(dim=1), pv_dist.unsqueeze(dim=1)]
 
-    if num_outputs > 6:
-        ei, ej = xi[:, 3:4], xj[:, 3:4]
-        emin = ((ei <= ej) * ei + (ei > ej) * ej) if for_onnx else torch.minimum(ei, ej)
-        lnet = torch.log((emin * delta).clamp(min=eps))
-        lnze = torch.log((emin / (ei + ej).clamp(min=eps)).clamp(min=eps))
-        outputs += [lnet, lnze]
+   # if num_outputs > 6:
+   #     ei, ej = xi[:, 3:4], xj[:, 3:4]
+   #     emin = ((ei <= ej) * ei + (ei > ej) * ej) if for_onnx else torch.minimum(ei, ej)
+   #     lnet = torch.log((emin * delta).clamp(min=eps))
+   #     lnze = torch.log((emin / (ei + ej).clamp(min=eps)).clamp(min=eps))
+   #     outputs += [lnet, lnze]
 
-    if num_outputs > 8:
-        costheta = (p3_norm(xi, eps=eps) * p3_norm(xj, eps=eps)).sum(dim=1, keepdim=True)
-        sintheta = (1 - costheta**2).clamp(min=0, max=1).sqrt()
-        outputs += [costheta, sintheta]
+   # if num_outputs > 8:
+   #     costheta = (p3_norm(xi, eps=eps) * p3_norm(xj, eps=eps)).sum(dim=1, keepdim=True)
+   #     sintheta = (1 - costheta**2).clamp(min=0, max=1).sqrt()
+   #     outputs += [costheta, sintheta]
 
     assert(len(outputs) == num_outputs)
     #print(len(outputs))
@@ -215,16 +218,24 @@ class Embed(nn.Module):
         # x: (seq_len, batch, embed_dim)
         return self.embed(x)
     
-def tril_indices(x, seq_len, offset = True):
+def tril_indicesOLD(x, seq_len: int, offset: bool = True):
     if offset:
-        a, b = [], []
-        for i in range(seq_len):
+        a: List[int] = [] 
+        b: List[int] = []
+        #a, b = [], []
+        #a = torch.jit.annotate(List[Tensor], [])
+        #b = torch.jit.annotate(List[Tensor], [])
+        for i in range(int(seq_len)):
             for j in range(i):
                 a.append(i)
                 b.append(j)
     else:
-        a, b = [], []
-        for i in range(seq_len):
+        a: List[int] = [] 
+        b: List[int] = []
+        #a, b = [], []
+        #a = torch.jit.annotate(List[Tensor], [])
+        #b = torch.jit.annotate(List[Tensor], [])
+        for i in range(int(seq_len)):
             for j in range(i+1):
                 a.append(i)
                 b.append(j)
@@ -233,8 +244,24 @@ def tril_indices(x, seq_len, offset = True):
     
     return i, j
 
-def tril_indicesNEW(rows, cols, offset=0):
-    return torch.ones(rows, cols, dtype=torch.uint8).tril(offset).nonzero().t()
+# https://github.com/pytorch/pytorch/issues/32968#issuecomment-733240232
+def tril_onnx(x, diagonal: int=0):
+    l = x.shape[0]
+    arange = torch.arange(l, device=x.device)
+    mask = arange.expand(l, l)
+    arange = arange.unsqueeze(-1)
+    if diagonal:
+        arange = arange + diagonal
+    mask = mask <= arange
+    # return mask * x
+    return mask
+
+def tril_indices(rows: int, cols: int, offset: int=0):
+    return tril_onnx(torch.ones(rows, cols, dtype=torch.uint8), offset).nonzero().t() # new
+    # return torch.ones(rows, cols, dtype=torch.uint8).tril(offset).nonzero().t() old
+
+def tril_indicesNEW(rows: int, cols: int, offset: int=0):
+    return torch.ones(rows, cols).tril(offset).nonzero().t()
 
 
 class PairEmbed(nn.Module):
@@ -242,6 +269,9 @@ class PairEmbed(nn.Module):
         super().__init__()
 
         self.for_onnx = for_onnx
+        if self.for_onnx:
+            self.num_outputs = 4
+            self.eps = eps
         self.pairwise_lv_fts = partial(pairwise_lv_fts, num_outputs=4, eps=eps, for_onnx=for_onnx)
 
         module_list = [] #[nn.BatchNorm1d(input_dim)] if normalize_input else []
@@ -273,13 +303,16 @@ class PairEmbed(nn.Module):
             #k = (i != j)*1
             x = self.pairwise_lv_fts(xi, xj)
         else:
-            i, j = tril_indices(x, seq_len, offset = True) # old
-            #i, j = tril_indices(seq_len, seq_len, offset = -1) # new
+        #if True:
+            #i, j = tril_indices(x, seq_len, offset = True) # old
+            ij_ = tril_indicesNEW(seq_len, seq_len, offset = -1) # new
+            i, j = ij_[0], ij_[1] # new
             x = x.unsqueeze(-1).repeat(1, 1, 1, seq_len)
             xi = x[:, :, i, j]  # (batch, dim, seq_len*(seq_len+1)/2)
             xj = x[:, :, j, i]
             #k = (i != j)*1
-            x = self.pairwise_lv_fts(xi, xj)
+            #x = self.pairwise_lv_fts(xi, xj)
+            x = pairwise_lv_fts(xi, xj, num_outputs=self.num_outputs, eps=self.eps, for_onnx=self.for_onnx)
             #x = self.pairwise_lv_fts(x.unsqueeze(-1), x.unsqueeze(-2)).view(batch_size, -1, seq_len * seq_len)
 # END indentation if doing nominal training
         elements = self.embed(x)  # (batch, embed_dim, num_elements
@@ -653,7 +686,7 @@ def _get_activation_fn(activation):
 
     raise RuntimeError("activation should be relu/gelu, not {}".format(activation))
 
-def build_E_p(tensor, is_cpf = False): #pt, eta, phi, e (, coords)
+def build_E_p(tensor, is_cpf: bool = False): #pt, eta, phi, e (, coords)
     #a, b, _ = tensor.size()
     out = torch.zeros(tensor.shape[0], tensor.shape[1], 4, device = tensor.device)
     #out = torch.zeros(a, b, 4, device = tensor.device)
@@ -723,7 +756,7 @@ class ParticleTransformer(nn.Module):
                  num_enc = 8,
                  num_head = 8,
                  embed_dim = 128,
-                 cpf_dim = 17,
+                 cpf_dim = 16,#7,
                  npf_dim = 8,
                  vtx_dim = 12,
                  for_inference = False,
@@ -742,17 +775,27 @@ class ParticleTransformer(nn.Module):
         self.Encoder = HF_TransformerEncoder(self.EncoderLayer, num_layers=num_enc)
 
         self.CLS_EncoderLayer1 = CLS_TransformerEncoderLayer(d_model=embed_dim, nhead=num_head, dropout = 0.1)
-        if(self.num_enc_layers > 3):
-            self.CLS_EncoderLayer2 = CLS_TransformerEncoderLayer(d_model=embed_dim, nhead=num_head, dropout = 0.1)
+        # commented out for onnx via jit.script
+        #if(self.num_enc_layers > 3):
+        #if(True):
+        #    self.CLS_EncoderLayer2 = CLS_TransformerEncoderLayer(d_model=embed_dim, nhead=num_head, dropout = 0.1)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim), requires_grad=True)
         trunc_normal_(self.cls_token, std=.02)
 
-    def forward(self, inpt, in2=None, in3=None, in4=None, in5=None, in6=None):
+    #def forward(self, inpt: torch.Tensor, in2: Optional[torch.Tensor]=None, in3: Optional[torch.Tensor]=None, in4: Optional[torch.Tensor]=None, in5: Optional[torch.Tensor]=None, in6: Optional[torch.Tensor]=None):
+    def forward(self, inpt: torch.Tensor = None, in2: torch.Tensor = None, in3: torch.Tensor = None, in4: torch.Tensor = None, in5: torch.Tensor = None, in6: torch.Tensor = None):
 
+        # commented out for onnx via jit.script
         if in2 == None:
             cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = inpt[0], inpt[1], inpt[2], inpt[3], inpt[4], inpt[5]
         else:
+        #if True:
+            #assert(in2 is not None)
+            #assert(in3 is not None)
+            #assert(in4 is not None)
+            #assert(in5 is not None)
+            #assert(in6 is not None)
             cpf, npf, vtx, cpf_4v, npf_4v, vtx_4v = inpt, in2, in3, in4, in5, in6
             
         padding_mask = torch.cat((cpf_4v[:,:,:1],npf_4v[:,:,:1],vtx_4v[:,:,:1]), dim = 1)
@@ -772,8 +815,9 @@ class ParticleTransformer(nn.Module):
 
         cls_tokens = self.cls_token.expand(enc.size(0), 1, -1)
         cls_tokens = self.CLS_EncoderLayer1(cls_tokens, enc, padding_mask)
-        if(self.num_enc_layers > 3):
-            cls_tokens = self.CLS_EncoderLayer2(cls_tokens, enc, padding_mask)
+        # commented out for onnx via jit.script
+        #if(self.num_enc_layers > 3):
+        #    cls_tokens = self.CLS_EncoderLayer2(cls_tokens, enc, padding_mask)
 
         x = torch.squeeze(cls_tokens, dim = 1)
         output = self.Linear(self.cls_norm(x))
